@@ -13,7 +13,7 @@ export const FloatingFormSelector = ({ variant, onSelect }: Props) => {
   const ref = useRef<HTMLDivElement | null>(null);
 
   // Bubble visual style follows current variant: aurora when on Network, navy when on a Clinic form.
-  const bubbleClass = variant === "network" ? "navy" : "aurora";
+  const bubbleClass = variant === "network" ? "aurora" : "navy";
   const bubbleLabel = variant === "network" ? "Clinic Version" : "Network Version";
 
   useEffect(() => {
