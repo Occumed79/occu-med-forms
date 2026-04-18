@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Management Pricing Memo · Occu-Med</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --aurora-green:#24c98a;--aurora-teal:#0a6664;--aurora-purple:#5b4fcf;--aurora-pink:#c4286e;
+  --required:#c0392b;--border:#d0d7de;--text:#1c2b3a;--label:#2c3e50;
+  --bg:#f0f4f9;--white:#ffffff;--radius:6px;
+  --shadow:0 4px 24px rgba(0,0,0,0.10);
+}
+body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;padding:28px 16px 80px}
+
+/* ── Settings Gear ── */
+.gear-btn{
+  position:fixed;top:18px;right:18px;z-index:500;
+  width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(9,14,26,0.85);color:#fff;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 12px rgba(0,0,0,0.25);
+  transition:background 0.2s,transform 0.2s;
+}
+.gear-btn:hover{background:#090e1a;transform:rotate(30deg)}
+
+/* ── Card ── */
+.form-card{max-width:860px;margin:0 auto;background:var(--white);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+
+/* ── Aurora Header ── */
+@keyframes auroraShift{0%{background-position:0% 50%}25%{background-position:60% 30%}50%{background-position:100% 50%}75%{background-position:40% 70%}100%{background-position:0% 50%}}
+@keyframes auroraGlow{0%{opacity:.55;transform:translateX(-12%) scaleY(1)}33%{opacity:.80;transform:translateX(8%) scaleY(1.08)}66%{opacity:.60;transform:translateX(-4%) scaleY(.96)}100%{opacity:.55;transform:translateX(-12%) scaleY(1)}}
+@keyframes auroraGlow2{0%{opacity:.40;transform:translateX(10%) scaleY(1.04)}40%{opacity:.65;transform:translateX(-6%) scaleY(.94)}75%{opacity:.50;transform:translateX(14%) scaleY(1.10)}100%{opacity:.40;transform:translateX(10%) scaleY(1.04)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.form-header{position:relative;background:#090e1a;padding:22px 36px;display:flex;align-items:center;gap:24px;overflow:hidden}
+.form-header::before{content:'';position:absolute;inset:-60% -30%;background:conic-gradient(from 200deg at 40% 60%,#0d1f3c 0deg,#0b3d52 40deg,#0a6664 75deg,#1a9e6e 110deg,#24c98a 140deg,#2ec4c4 170deg,#5b4fcf 210deg,#9b30c8 245deg,#c4286e 275deg,#1a3c8a 310deg,#0d1f3c 360deg);background-size:300% 300%;filter:blur(28px);animation:auroraShift 14s ease-in-out infinite,auroraGlow 9s ease-in-out infinite;z-index:0}
+.form-header::after{content:'';position:absolute;inset:-40% -20%;background:radial-gradient(ellipse 80% 55% at 30% 70%,rgba(36,201,138,.45) 0%,rgba(91,79,207,.30) 35%,rgba(46,196,196,.25) 55%,transparent 75%),radial-gradient(ellipse 70% 45% at 75% 35%,rgba(155,48,200,.35) 0%,rgba(196,40,110,.22) 40%,transparent 70%);filter:blur(18px);animation:auroraShift 18s ease-in-out infinite reverse,auroraGlow2 12s ease-in-out infinite;z-index:0}
+.header-logo{height:70px;width:auto;flex-shrink:0;position:relative;z-index:1;filter:brightness(0) invert(1)}
+.header-title{font-family:'Source Serif 4',serif;font-size:26px;font-weight:600;color:#fff;letter-spacing:.01em;line-height:1.2;position:relative;z-index:1;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+
+/* ── Body ── */
+.form-body{padding:32px 36px 28px}
+.section-divider{border:none;border-top:1px solid #dde4ec;margin:22px 0}
+.field-group{margin-bottom:20px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+label{display:block;font-size:13.5px;font-weight:500;color:var(--label);margin-bottom:6px}
+.required-star{color:var(--required);margin-left:3px}
+
+input[type=text],input[type=date],input[type=email],textarea,select{
+  width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--white);
+  transition:border-color .18s,box-shadow .18s;outline:none;appearance:none;-webkit-appearance:none
+}
+input[type=text]:focus,input[type=date]:focus,input[type=email]:focus,textarea:focus,select:focus{
+  border-color:var(--aurora-green);
+  box-shadow:0 0 0 3px rgba(36,201,138,.18),0 0 0 1px rgba(91,79,207,.12)
+}
+textarea{resize:vertical;min-height:90px;line-height:1.5}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231a4a7a' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;cursor:pointer}
+input[type=date]{cursor:pointer}
+.date-hint{font-size:11px;color:#7a8ea0;margin-top:4px}
+
+/* Address */
+.address-block{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.address-block input{border:none;border-bottom:1px solid var(--border);border-radius:0;padding:9px 12px}
+.address-block input:last-child{border-bottom:none}
+.address-block input:focus{border-color:transparent;box-shadow:inset 0 0 0 2px var(--aurora-green);z-index:1;position:relative}
+.address-row{display:grid;grid-template-columns:1fr 1fr 100px;border-top:1px solid var(--border)}
+.address-row input{border-bottom:none;border-right:1px solid var(--border)}
+.address-row input:last-child{border-right:none}
+
+/* File upload */
+.file-upload-area{border:2px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:border-color .18s,background .18s;position:relative}
+.file-upload-area:hover{border-color:var(--aurora-green);background:rgba(36,201,138,.04)}
+.file-upload-area input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.upload-icon{font-size:22px;margin-bottom:6px;color:var(--aurora-teal)}
+.upload-text{font-size:13.5px;color:#7a8ea0}
+.upload-text strong{color:var(--aurora-teal)}
+.file-name-display{margin-top:8px;font-size:12px;color:var(--aurora-teal);font-style:italic}
+
+/* Validation */
+.field-error{font-size:11.5px;color:var(--required);margin-top:4px;display:none}
+.has-error input,.has-error select,.has-error textarea{border-color:var(--required)!important}
+.has-error .field-error{display:block}
+
+/* ── Action Bar ── */
+.action-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 36px 24px;border-top:1px solid #dde4ec;gap:12px;flex-wrap:wrap
+}
+.action-right{display:flex;gap:12px}
+.btn{padding:10px 22px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .18s;letter-spacing:.02em;display:flex;align-items:center;gap:7px}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:#5a6a7a;font-weight:500}
+.btn-ghost:hover{background:var(--bg);border-color:#b0bcc8}
+.btn-secondary{background:var(--white);border:1px solid var(--border);color:var(--label)}
+.btn-secondary:hover{background:var(--bg)}
+.btn-primary{background:linear-gradient(135deg,var(--aurora-teal),var(--aurora-green) 50%,var(--aurora-purple));background-size:200% 200%;animation:auroraShift 8s ease-in-out infinite;color:#fff;box-shadow:0 2px 12px rgba(36,201,138,.35)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(36,201,138,.50)}
+.btn-primary:active{transform:none}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* ── Settings Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(9,14,26,.55);z-index:900;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:12px;width:min(560px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.22);animation:modalIn .22s ease}
+@keyframes modalIn{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.modal-head{
+  background:#090e1a;padding:20px 24px;border-radius:12px 12px 0 0;
+  display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden
+}
+.modal-head::before{content:'';position:absolute;inset:-50% -20%;background:conic-gradient(from 180deg at 50% 50%,#0a6664,#24c98a,#5b4fcf,#0a6664);filter:blur(20px);opacity:.6;animation:auroraShift 10s ease infinite}
+.modal-head h3{color:#fff;font-family:'Source Serif 4',serif;font-size:17px;position:relative;z-index:1}
+.modal-close{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;position:relative;z-index:1;line-height:1}
+.modal-close:hover{color:#fff}
+.modal-body{padding:24px}
+.modal-desc{font-size:13.5px;color:#5a6a7a;margin-bottom:20px;line-height:1.55}
+.modal-desc a{color:var(--aurora-teal);text-decoration:none;font-weight:600}
+.modal-desc a:hover{text-decoration:underline}
+.modal-field{margin-bottom:16px}
+.modal-field label{font-size:12.5px;font-weight:600;color:var(--label);margin-bottom:5px;display:block}
+.modal-field input{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:5px;font-size:13.5px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none}
+.modal-field input:focus{border-color:var(--aurora-green);box-shadow:0 0 0 3px rgba(36,201,138,.15)}
+.setup-guide{background:#f6f9fb;border-radius:8px;padding:16px;margin-top:16px}
+.setup-guide h4{font-size:12.5px;font-weight:700;color:var(--label);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.setup-guide ol{padding-left:18px;font-size:13px;color:#4a5a6a;line-height:2}
+.setup-guide a{color:var(--aurora-teal);text-decoration:none;font-weight:600}
+.setup-guide details{margin-top:10px}
+.setup-guide summary{font-size:12.5px;color:var(--aurora-purple);cursor:pointer;font-weight:600}
+.setup-guide code{display:block;margin-top:8px;background:#e8edf2;padding:10px;border-radius:5px;font-size:11px;line-height:1.8;color:#2c3e50;word-break:break-all}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid #eee}
+
+/* ── Loading Overlay ── */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(9,14,26,.6);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.loading-overlay.active{display:flex}
+.loading-box{background:#fff;border-radius:12px;padding:32px 40px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.loading-spinner{width:40px;height:40px;border:3px solid #eee;border-top-color:var(--aurora-green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px}
+.loading-text{font-size:14px;color:var(--label);font-weight:500}
+
+/* ── Toast ── */
+.toast{position:fixed;top:20px;left:50%;transform:translate(-50%,-80px);opacity:0;padding:13px 22px;border-radius:8px;font-size:14px;font-weight:500;box-shadow:0 4px 18px rgba(0,0,0,.18);z-index:9999;transition:all .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast.success{background:#1a6e3c;color:#fff}
+.toast.error{background:#c0392b;color:#fff}
+.toast.info{background:#090e1a;color:#fff}
+
+/* ── Status badge ── */
+.emailjs-status{font-size:11.5px;padding:4px 10px;border-radius:20px;font-weight:600}
+.emailjs-status.configured{background:rgba(36,201,138,.15);color:#0a6664}
+.emailjs-status.not-configured{background:rgba(220,220,230,.5);color:#7a8a9a}
+
+@media(max-width:600px){
+  .form-header{flex-direction:column;text-align:center;padding:20px}
+  .form-body{padding:20px}
+  .field-row{grid-template-columns:1fr}
+  .address-row{grid-template-columns:1fr}
+  .action-bar{padding:16px 20px}
+  .action-right{width:100%}
+  .action-right .btn{flex:1;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<button class="gear-btn" onclick="openSettings()" title="Email Settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+
+<div class="form-card">
+  <!-- Aurora Header -->
+  <div class="form-header">
+    <img class="header-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPIAAAB4CAYAAADIQ68aAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUY3OTY2REM3NDc3MTFFMkE1RjM5Qjg3MDE5QjU3MzMiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUY3OTY2REI3NDc3MTFFMkE1RjM5Qjg3MDE5QjU3MzMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmRpZDowMzgwMTE3NDA3MjA2ODExOEY2MkJFMDQ3NUU2RDlDMiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowMzgwMTE3NDA3MjA2ODExOEY2MkJFMDQ3NUU2RDlDMiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pnji/JYAABtbSURBVHja7F0HvBTV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" alt="Occu-Med">
+    <div class="header-title">Network Management Pricing Memo</div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-body">
+    <form id="memoForm" novalidate>
+
+      <div class="field-row">
+        <div class="field-group" data-required>
+          <label>Network Management Analyst Name <span class="required-star">*</span></label>
+          <input type="text" id="analystName" placeholder="Full name">
+          <div class="field-error">Required.</div>
+        </div>
+        <div class="field-group">
+          <label>Director of Network Management</label>
+          <input type="text" id="directorName" placeholder="Full name">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group" data-required>
+          <label>Date of Memo <span class="required-star">*</span></label>
+          <input type="date" id="dateOfMemo">
+          <div class="date-hint">dd-MMM-yyyy</div>
+          <div class="field-error">Required.</div>
+        </div>
+        <div class="field-group" data-required>
+          <label>Date of Pricing Received <span class="required-star">*</span></label>
+          <input type="date" id="dateOfPricingReceived">
+          <div class="date-hint">dd-MMM-yyyy</div>
+          <div class="field-error">Required.</div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group" data-required>
+          <label>Source of Pricing <span class="required-star">*</span></label>
+          <input type="text" id="sourceOfPricing" placeholder="e.g. Email, Phone, Portal">
+          <div class="field-error">Required.</div>
+        </div>
+        <div class="field-group">
+          <label>Clinic Representative Name</label>
+          <input type="text" id="clinicRepName" placeholder="Contact name">
+        </div>
+      </div>
+
+      <div class="field-group" data-required>
+        <label>Method of Communication <span class="required-star">*</span></label>
+        <input type="text" id="methodOfComm" placeholder="e.g. Email, Phone, Fax">
+        <div class="field-error">Required.</div>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="field-row">
+        <div class="field-group" data-required>
+          <label>Existing or New Clinic <span class="required-star">*</span></label>
+          <select id="existingOrNew">
+            <option value="" disabled selected></option>
+            <option>Existing Clinic</option>
+            <option>New Clinic</option>
+          </select>
+          <div class="field-error">Required.</div>
+        </div>
+        <div class="field-group" data-required>
+          <label>Updated Pricing or New Pricing <span class="required-star">*</span></label>
+          <select id="pricingType">
+            <option value="" disabled selected></option>
+            <option>Updated Pricing</option>
+            <option>New Pricing</option>
+          </select>
+          <div class="field-error">Required.</div>
+        </div>
+      </div>
+
+      <div class="field-group" data-required>
+        <label>Acquisition Type <span class="required-star">*</span></label>
+        <select id="acquisitionType">
+          <option value="" disabled selected></option>
+          <option>New Clinic</option>
+          <option>Existing Clinic Replacement</option>
+          <option>Pricing Agreement Update</option>
+          <option>Special Request</option>
+          <option>Proactive Effort</option>
+        </select>
+        <div class="field-error">Required.</div>
+      </div>
+
+      <div class="field-group" data-required>
+        <label>Notes or Context Regarding the Pricing Received <span class="required-star">*</span></label>
+        <textarea id="notes" placeholder="Relevant context, special conditions, background…"></textarea>
+        <div class="field-error">Required.</div>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="field-group" data-required>
+        <label>Clinic Address <span class="required-star">*</span></label>
+        <div class="address-block">
+          <input type="text" id="street1" placeholder="Street Address">
+          <input type="text" id="street2" placeholder="Address Line 2 (Suite, Unit, etc.)">
+          <div class="address-row">
+            <input type="text" id="addrCity" placeholder="City">
+            <input type="text" id="addrState" placeholder="State">
+            <input type="text" id="addrZip" placeholder="ZIP">
+          </div>
+        </div>
+        <div class="field-error">Street address required.</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label>Clinic Type</label>
+          <select id="clinicType">
+            <option value="" disabled selected>Select type…</option>
+            <optgroup label="Medical / Dental Providers">
+              <option>State Side Dental Provider</option>
+              <option>State Side Medical Provider</option>
+              <option>Occu-VAX State Side</option>
+              <option>International Medical Provider</option>
+              <option>International Dental Provider</option>
+              <option>Occu-Vax International</option>
+            </optgroup>
+            <optgroup label="Specialist Evaluations">
+              <option>Neurologist</option>
+              <option>Orthopaedist</option>
+              <option>Psychiatrist</option>
+              <option>Optometrist or Ophthalmologist</option>
+              <option>Gastroenterology Fitness-for-Duty Evaluation</option>
+            </optgroup>
+            <optgroup label="Physical / Fitness Exams">
+              <option>FAA Physical</option>
+              <option>DOT Exam and Certificate</option>
+              <option>RTW Physical</option>
+              <option>Physical Ability Test</option>
+              <option>Psychological Assessment</option>
+              <option>Breast Examination</option>
+              <option>Sigmoidoscopy</option>
+            </optgroup>
+            <optgroup label="Cardiac / Pulmonary">
+              <option>Treadmill Stress Test</option>
+              <option>EKG</option>
+              <option>Stress ECHO or SPECT Scan</option>
+              <option>Pulmonary Function Test</option>
+            </optgroup>
+            <optgroup label="Respirator Testing">
+              <option>Respirator Fit Test</option>
+              <option>OSHA Respirator Medical Evaluation</option>
+              <option>N95 Respirator Certification / Fit Test</option>
+              <option>Quantitative Respirator Fit Test</option>
+            </optgroup>
+            <optgroup label="Imaging">
+              <option>Chest X-ray</option>
+              <option>Mammogram w/ Interpretation</option>
+              <option>Gallbladder Ultrasound</option>
+            </optgroup>
+            <optgroup label="Labs / Collections">
+              <option>Blood Collection</option>
+              <option>Urine Drug Screen Collection</option>
+              <option>After Hours Drug Screen</option>
+              <option>DNA Collection</option>
+              <option>PPD</option>
+              <option>Breath Alcohol Test (BAT)</option>
+            </optgroup>
+            <optgroup label="Vision">
+              <option>Vision</option>
+              <option>Farnsworth D-15</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option>Collection Site</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Client</label>
+          <input type="text" id="client" placeholder="Associated client name">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>File Upload <span style="font-weight:400;color:#7a8ea0">(Attachments become pages 2+ of the PDF packet)</span></label>
+        <div class="file-upload-area">
+          <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png">
+          <div class="upload-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a6664" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></div>
+          <div class="upload-text"><strong>Choose Files</strong> or drag & drop — PDF, JPG, PNG</div>
+          <div class="file-name-display" id="fileNameDisplay"></div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="field-group" id="recipientEmailGroup">
+        <label>Send To (Recipient Email)</label>
+        <input type="email" id="recipientEmail" placeholder="recipient@example.com">
+        <div class="field-error">Enter a valid email.</div>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="btn btn-ghost" onclick="openSettings()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> Email Settings</button>
+      <span class="emailjs-status not-configured" id="ejStatus">Not configured</span>
+    </div>
+    <div class="action-right">
+      <button class="btn btn-secondary" onclick="handleDownload()">Download PDF</button>
+      <button class="btn btn-primary" id="sendBtn" onclick="handleSend()">Send Memo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal" onclick="handleModalClick(event)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Email Settings · EmailJS</h3>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">
+        Sending memos by email uses <a href="https://www.emailjs.com" target="_blank">EmailJS</a> — a free service (200 emails/month) that works directly from this page with no backend required. Configure it once and your settings are saved in this browser.
+      </p>
+      <div class="modal-field">
+        <label>Public Key</label>
+        <input id="ejPublicKey" placeholder="e.g. user_xxxxxxxxxxxxxx">
+      </div>
+      <div class="modal-field">
+        <label>Service ID</label>
+        <input id="ejServiceId" placeholder="e.g. service_xxxxxxx">
+      </div>
+      <div class="modal-field">
+        <label>Template ID</label>
+        <input id="ejTemplateId" placeholder="e.g. template_xxxxxxx">
+      </div>
+      <div class="setup-guide">
+        <h4>One-Time Setup (5 min)</h4>
+        <ol>
+          <li>Create a free account at <a href="https://www.emailjs.com" target="_blank">emailjs.com</a></li>
+          <li>Go to <strong>Email Services</strong> → connect Gmail, Outlook, etc.</li>
+          <li>Go to <strong>Email Templates</strong> → create a new template</li>
+          <li>Set <strong>To Email</strong> field to: <code style="display:inline;padding:1px 5px;border-radius:3px;background:#e8edf2">{{to_email}}</code></li>
+          <li>Add any body text you want — all memo fields are available as variables</li>
+          <li>Go to <strong>Account → API Keys</strong> and copy your Public Key</li>
+        </ol>
+        <details>
+          <summary>Available template variables</summary>
+          <code>{{to_email}} · {{analyst_name}} · {{director_name}} · {{memo_date}} · {{pricing_date}} · {{source_of_pricing}} · {{clinic_rep}} · {{method_of_comm}} · {{existing_or_new}} · {{pricing_type}} · {{acquisition_type}} · {{notes}} · {{clinic_address}} · {{clinic_type}} · {{client}}</code>
+        </details>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <p class="loading-text" id="loadingText">Processing…</p>
+  </div>
+</div>
+
+<!-- Lib warning -->
+<div id="libWarning" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#7a3c00;color:#fff;font-size:12px;padding:8px 16px;text-align:center;z-index:9998;font-family:'DM Sans',sans-serif"></div>
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// LOGO
+// ══════════════════════════════════════════════
+const LOGO_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAPIAAAB4CAYAAADIQ68aAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUY3OTY2REM3NDc3MTFFMkE1RjM5Qjg3MDE5QjU3MzMiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUY3OTY2REI3NDc3MTFFMkE1RjM5Qjg3MDE5QjU3MzMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmRpZDowMzgwMTE3NDA3MjA2ODExOEY2MkJFMDQ3NUU2RDlDMiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowMzgwMTE3NDA3MjA2ODExOEY2MkJFMDQ3NUU2RDlDMiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pnji/JYAABtbSURBVHja7F0HvBTV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';
+
+// ══════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════
+const SK = 'occu_memo_ej';
+let EJ = { publicKey:'', serviceId:'', templateId:'' };
+
+function loadSettings() {
+  try { EJ = { ...EJ, ...JSON.parse(localStorage.getItem(SK) || '{}') }; } catch(e) {}
+  document.getElementById('ejPublicKey').value  = EJ.publicKey;
+  document.getElementById('ejServiceId').value  = EJ.serviceId;
+  document.getElementById('ejTemplateId').value = EJ.templateId;
+  updateStatus();
+}
+
+function saveSettings() {
+  EJ = {
+    publicKey:  document.getElementById('ejPublicKey').value.trim(),
+    serviceId:  document.getElementById('ejServiceId').value.trim(),
+    templateId: document.getElementById('ejTemplateId').value.trim()
+  };
+  localStorage.setItem(SK, JSON.stringify(EJ));
+  closeSettings();
+  updateStatus();
+  showToast('Settings saved.', 'success');
+}
+
+function updateStatus() {
+  const el = document.getElementById('ejStatus');
+  const ok = EJ.publicKey && EJ.serviceId && EJ.templateId;
+  el.textContent = ok ? '✓ Email configured' : 'Email not configured';
+  el.className = 'emailjs-status ' + (ok ? 'configured' : 'not-configured');
+}
+
+function openSettings()  { loadSettings(); document.getElementById('settingsModal').classList.add('open'); }
+function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
+function handleModalClick(e) { if (e.target === e.currentTarget) closeSettings(); }
+
+// ══════════════════════════════════════════════
+// FILE UPLOAD DISPLAY
+// ══════════════════════════════════════════════
+document.getElementById('fileInput').addEventListener('change', function() {
+  const names = Array.from(this.files).map(f => f.name).join(', ');
+  document.getElementById('fileNameDisplay').textContent = names;
+});
+
+// ══════════════════════════════════════════════
+// FORM DATA & VALIDATION
+// ══════════════════════════════════════════════
+function G(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+function fmtDate(s) {
+  if (!s) return '—';
+  const d = new Date(s + 'T00:00:00');
+  return isNaN(d) ? s : d.toLocaleDateString('en-US', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function collectData() {
+  const addr = [G('street1'), G('street2'), [G('addrCity'), G('addrState'), G('addrZip')].filter(Boolean).join(', ')].filter(Boolean).join(', ');
+  return {
+    analystName: G('analystName'), directorName: G('directorName'),
+    dateOfMemo: G('dateOfMemo'), dateOfPricingReceived: G('dateOfPricingReceived'),
+    sourceOfPricing: G('sourceOfPricing'), clinicRepName: G('clinicRepName'),
+    methodOfComm: G('methodOfComm'), existingOrNew: G('existingOrNew'),
+    pricingType: G('pricingType'), acquisitionType: G('acquisitionType'),
+    notes: G('notes'),
+    street1: G('street1'), street2: G('street2'),
+    city: G('addrCity'), state: G('addrState'), zip: G('addrZip'),
+    clinicAddress: addr, clinicType: G('clinicType'), client: G('client'),
+    recipientEmail: G('recipientEmail')
+  };
+}
+
+function validateForm(requireEmail) {
+  let ok = true;
+  document.querySelectorAll('[data-required]').forEach(grp => {
+    const isAddr = !!grp.querySelector('.address-block');
+    const inp = isAddr ? document.getElementById('street1') : grp.querySelector('input,select,textarea');
+    if (!inp) return;
+    const empty = inp.tagName === 'SELECT' ? inp.value === '' : inp.value.trim() === '';
+    if (empty) { grp.classList.add('has-error'); ok = false; }
+    else        { grp.classList.remove('has-error'); }
+  });
+  if (requireEmail) {
+    const eg = document.getElementById('recipientEmailGroup');
+    const re = document.getElementById('recipientEmail');
+    if (!re.value.trim() || !re.value.includes('@')) { eg.classList.add('has-error'); ok = false; }
+    else { eg.classList.remove('has-error'); }
+  }
+  if (!ok) document.querySelector('.has-error')?.scrollIntoView({ behavior:'smooth', block:'center' });
+  return ok;
+}
+
+document.querySelectorAll('input,select,textarea').forEach(el => {
+  ['input','change'].forEach(ev => el.addEventListener(ev, () => el.closest('[data-required]')?.classList.remove('has-error')));
+});
+document.getElementById('recipientEmail').addEventListener('input', () => {
+  document.getElementById('recipientEmailGroup').classList.remove('has-error');
+});
+
+// ══════════════════════════════════════════════
+// PDF GENERATION — jsPDF
+// ══════════════════════════════════════════════
+async function generateMemoPDF(d) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const PW = 210, M = 18, CW = PW - M * 2;
+  const c1x = M, c2x = M + CW/2 + 4, cw = CW/2 - 4;
+  let y = 0;
+
+  // Header bg
+  doc.setFillColor(9, 14, 26);
+  doc.rect(0, 0, PW, 40, 'F');
+
+  // Aurora strip
+  const stops = [[0,'#0a6664'],[0.28,'#24c98a'],[0.56,'#2ec4c4'],[0.78,'#5b4fcf'],[1,'#9b30c8']];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const x1 = stops[i][0] * PW, x2 = stops[i+1][0] * PW;
+    const c = stops[i][1].replace('#','');
+    const r = parseInt(c.slice(0,2),16), g2 = parseInt(c.slice(2,4),16), b = parseInt(c.slice(4,6),16);
+    doc.setFillColor(r, g2, b);
+    doc.rect(x1, 39.2, x2 - x1, 2.2, 'F');
+  }
+
+  // Logo
+  doc.addImage('data:image/png;base64,' + LOGO_B64, 'PNG', M, 8, 20, 14);
+
+  // Title
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(15);
+  doc.setTextColor(255,255,255);
+  doc.text('Network Management Pricing Memo', M + 26, 20);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(160,200,200);
+  doc.text('OCCU-MED CONFIDENTIAL', M + 26, 28);
+
+  y = 52;
+
+  // Helpers
+  const lbl = (t, x, yy) => {
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(130,148,165);
+    doc.text(t.toUpperCase(), x, yy);
+  };
+  const val = (t, x, yy, w) => {
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(28,43,58);
+    if (w) doc.text(doc.splitTextToSize(t||'—', w), x, yy);
+    else   doc.text(t||'—', x, yy);
+  };
+  const uline = (x, yy, w) => {
+    doc.setDrawColor(230,236,242); doc.setLineWidth(0.25);
+    doc.line(x, yy, x + w, yy);
+  };
+  const field = (lb, vl, x, w, yy) => {
+    lbl(lb, x, yy); val(vl, x, yy+5); uline(x, yy+8.5, w);
+  };
+  const divider = yy => {
+    doc.setDrawColor(215,225,235); doc.setLineWidth(0.4);
+    doc.line(M, yy, PW-M, yy); return yy + 7;
+  };
+
+  // Row 1
+  field('Network Management Analyst', d.analystName, c1x, cw, y);
+  field('Director of Network Management', d.directorName, c2x, cw, y); y += 15;
+
+  // Row 2
+  field('Date of Memo', fmtDate(d.dateOfMemo), c1x, cw, y);
+  field('Date of Pricing Received', fmtDate(d.dateOfPricingReceived), c2x, cw, y); y += 15;
+
+  y = divider(y + 2);
+
+  // Row 3
+  field('Source of Pricing', d.sourceOfPricing, c1x, cw, y);
+  field('Clinic Representative Name', d.clinicRepName||'—', c2x, cw, y); y += 15;
+
+  // Row 4
+  field('Method of Communication', d.methodOfComm, c1x, cw, y);
+  field('Existing or New Clinic', d.existingOrNew, c2x, cw, y); y += 15;
+
+  // Row 5
+  field('Updated or New Pricing', d.pricingType, c1x, cw, y);
+  field('Acquisition Type', d.acquisitionType, c2x, cw, y); y += 15;
+
+  y = divider(y + 2);
+
+  // Notes
+  lbl('Notes or Context Regarding the Pricing Received', M, y); y += 5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(28,43,58);
+  const noteLines = doc.splitTextToSize(d.notes||'—', CW);
+  doc.text(noteLines, M, y);
+  y += noteLines.length * 5 + 4;
+  uline(M, y, CW); y += 8;
+
+  y = divider(y);
+
+  // Address
+  lbl('Clinic Address', c1x, y); y += 5;
+  const addrStr = [d.street1, d.street2, [d.city, d.state, d.zip].filter(Boolean).join(', ')].filter(Boolean).join('
+');
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(28,43,58);
+  const addrLines = doc.splitTextToSize(addrStr||'—', cw);
+  doc.text(addrLines, c1x, y);
+  const addrBottom = y + addrLines.length * 5;
+
+  field('Clinic Type', d.clinicType||'—', c2x, cw, y - 5);
+  y = Math.max(addrBottom, y + 14) + 4;
+
+  field('Client', d.client||'—', M, CW, y); y += 15;
+
+  y = divider(y + 2);
+
+  // Footer
+  doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(160,172,185);
+  doc.text('Submitted: ' + new Date().toLocaleString(), M, y + 6);
+  doc.text('Occu-Med · Network Management Division', PW - M, y + 6, { align:'right' });
+
+  return doc.output('arraybuffer');
+}
+
+// ══════════════════════════════════════════════
+// MERGE UPLOADS — pdf-lib
+// ══════════════════════════════════════════════
+async function mergeUploads(memoBytes) {
+  const { PDFDocument } = PDFLib;
+  const main = await PDFDocument.load(memoBytes);
+  const files = document.getElementById('fileInput').files;
+
+  for (const file of files) {
+    const bytes = await file.arrayBuffer();
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    if (ext === 'pdf') {
+      try {
+        const uploaded = await PDFDocument.load(bytes);
+        const pages = await main.copyPages(uploaded, uploaded.getPageIndices());
+        pages.forEach(p => main.addPage(p));
+      } catch(e) { console.warn('Could not merge PDF:', file.name, e); }
+    } else if (['jpg','jpeg','png'].includes(ext)) {
+      const pg = main.addPage([612, 792]);
+      let img;
+      try {
+        img = ext === 'png' ? await main.embedPng(bytes) : await main.embedJpg(bytes);
+        const { width, height } = img.scale(1);
+        const ratio = Math.min(520/width, 720/height, 1);
+        const w = width * ratio, h = height * ratio;
+        pg.drawImage(img, { x:(612-w)/2, y:(792-h)/2, width:w, height:h });
+      } catch(e) { console.warn('Could not embed image:', file.name, e); }
+    }
+  }
+  return await main.save();
+}
+
+// ══════════════════════════════════════════════
+// DOWNLOAD
+// ══════════════════════════════════════════════
+function downloadPDF(bytes) {
+  const blob = new Blob([bytes], { type:'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `OccuMed_PricingMemo_${new Date().toISOString().slice(0,10)}.pdf`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ══════════════════════════════════════════════
+// EMAIL — EmailJS or mailto fallback
+// ══════════════════════════════════════════════
+async function sendViaEmailJS(d, pdfBytes) {
+  const filename = `OccuMed_PricingMemo_${new Date().toISOString().slice(0,10)}.pdf`;
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
+
+  await emailjs.send(EJ.serviceId, EJ.templateId, {
+    to_email:         d.recipientEmail,
+    analyst_name:     d.analystName,
+    director_name:    d.directorName,
+    memo_date:        fmtDate(d.dateOfMemo),
+    pricing_date:     fmtDate(d.dateOfPricingReceived),
+    source_of_pricing: d.sourceOfPricing,
+    clinic_rep:       d.clinicRepName,
+    method_of_comm:   d.methodOfComm,
+    existing_or_new:  d.existingOrNew,
+    pricing_type:     d.pricingType,
+    acquisition_type: d.acquisitionType,
+    notes:            d.notes,
+    clinic_address:   d.clinicAddress,
+    clinic_type:      d.clinicType,
+    client:           d.client,
+    dynamicAttachments: [{ name: filename, data: b64 }]
+  }, { publicKey: EJ.publicKey });
+}
+
+function sendViaMailto(d) {
+  const sub = encodeURIComponent(`Network Management Pricing Memo — ${d.clinicType || d.acquisitionType}`);
+  const body = encodeURIComponent(
+    `Network Management Pricing Memo\nOCCU-MED CONFIDENTIAL\n\n` +
+    `Analyst: ${d.analystName}\nDirector: ${d.directorName}\n` +
+    `Date of Memo: ${fmtDate(d.dateOfMemo)}\nDate of Pricing Received: ${fmtDate(d.dateOfPricingReceived)}\n\n` +
+    `Source of Pricing: ${d.sourceOfPricing}\nClinic Rep: ${d.clinicRepName}\n` +
+    `Method of Communication: ${d.methodOfComm}\nExisting or New: ${d.existingOrNew}\n` +
+    `Pricing Type: ${d.pricingType}\nAcquisition Type: ${d.acquisitionType}\n\n` +
+    `Notes:\n${d.notes}\n\nClinic Address: ${d.clinicAddress}\n` +
+    `Clinic Type: ${d.clinicType}\nClient: ${d.client}\n\n` +
+    `[PDF downloaded to your device — please attach before sending]`
+  );
+  window.location.href = `mailto:${d.recipientEmail}?subject=${sub}&body=${body}`;
+}
+
+// ══════════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════════
+async function handleDownload() {
+  if (!validateForm(false)) return;
+  setLoading(true, 'Generating PDF…');
+  try {
+    const d = collectData();
+    const memo = await generateMemoPDF(d);
+    const final = await mergeUploads(memo);
+    downloadPDF(final);
+    showToast('PDF downloaded.', 'success');
+  } catch(e) {
+    console.error(e);
+    showToast('PDF generation failed.', 'error');
+  } finally { setLoading(false); }
+}
+
+async function handleSend() {
+  if (!validateForm(true)) return;
+  setLoading(true, 'Building PDF packet…');
+  try {
+    const d = collectData();
+    const memo = await generateMemoPDF(d);
+    const final = await mergeUploads(memo);
+
+    if (EJ.publicKey && EJ.serviceId && EJ.templateId) {
+      setLoading(true, 'Sending via EmailJS…');
+      try {
+        await sendViaEmailJS(d, final);
+        showToast('✓ Memo sent to ' + d.recipientEmail, 'success');
+      } catch(err) {
+        console.error('EmailJS error:', err);
+        // Fallback: download + mailto
+        downloadPDF(final);
+        setTimeout(() => sendViaMailto(d), 800);
+        showToast('EmailJS failed — PDF downloaded, email client opened.', 'info');
+      }
+    } else {
+      // No EmailJS: download + open mailto
+      downloadPDF(final);
+      setTimeout(() => sendViaMailto(d), 800);
+      showToast('PDF downloaded — attach it to the opened email draft.', 'info');
+    }
+  } catch(e) {
+    console.error(e);
+    showToast('Something went wrong. See console.', 'error');
+  } finally { setLoading(false); }
+}
+
+// ══════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════
+function setLoading(on, text) {
+  document.getElementById('loadingText').textContent = text || 'Processing…';
+  document.getElementById('loadingOverlay').classList.toggle('active', on);
+  document.getElementById('sendBtn').disabled = on;
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+function checkLibsReady() {
+  const missing = [];
+  if (typeof window.jspdf === 'undefined') missing.push('jsPDF');
+  if (typeof PDFLib === 'undefined') missing.push('pdf-lib');
+  if (missing.length) {
+    document.getElementById('libWarning').style.display = 'block';
+    document.getElementById('libWarning').textContent =
+      'Note: ' + missing.join(', ') + ' failed to load. PDF features require internet access. This form works normally when hosted on a web server.';
+  }
+}
+loadSettings();
+window.addEventListener('load', checkLibsReady);
+</script>
+</body>
+</html>
