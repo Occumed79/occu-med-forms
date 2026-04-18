@@ -7,11 +7,13 @@ import { ComponentSidebar } from "./ComponentSidebar";
 import { FACILITY_TYPES, PROVIDER_SPECIALTIES } from "@/data/examComponents";
 import {
   downloadPdf,
-  generateCertificate,
-  generateSignedClinicPdf,
-  sha256,
 } from "@/lib/pdf";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  apiCreateEnvelope,
+  apiFinalizeEnvelope,
+  apiLogView,
+  base64PdfToBytes,
+} from "@/lib/backend";
 import { useToast } from "@/hooks/use-toast";
 import type { PriceRow, SignedClinicMemoData } from "@/types/memo";
 
@@ -42,32 +44,27 @@ const initial: SignedClinicMemoData = {
 let _id = 0;
 const newId = () => `row-${Date.now()}-${++_id}`;
 
-function newEnvelopeId() {
-  const rand = crypto.getRandomValues(new Uint8Array(8));
-  const hex = Array.from(rand).map((b) => b.toString(16).padStart(2, "0")).join("");
-  return `OM-${Date.now().toString(36).toUpperCase()}-${hex.toUpperCase()}`;
-}
-
-async function fetchIp(): Promise<string> {
-  try {
-    const res = await fetch("https://api.ipify.org?format=json");
-    const j = await res.json();
-    return j.ip || "unknown";
-  } catch {
-    return "unknown";
-  }
-}
-
 export const SignedClinicMemoForm = () => {
   const [data, setData] = useState<SignedClinicMemoData>(initial);
   const [busy, setBusy] = useState(false);
-  const createdAtRef = useRef<string>(new Date().toISOString());
+  const [envelopeId, setEnvelopeId] = useState<string>("");
   const viewedAtRef = useRef<string | undefined>(undefined);
+  const [recipientEmail, setRecipientEmail] = useState("");
   const { toast } = useToast();
 
-  // Capture "viewed" once on mount
+  // Create authoritative envelope + viewed log on mount.
   useEffect(() => {
-    viewedAtRef.current = new Date().toISOString();
+    (async () => {
+      try {
+        const created = await apiCreateEnvelope();
+        setEnvelopeId(created.envelopeId);
+
+        const viewed = await apiLogView(created.envelopeId);
+        viewedAtRef.current = viewed.viewedAt;
+      } catch (e) {
+        console.warn("Backend envelope bootstrap failed", e);
+      }
+    })();
   }, []);
 
   const set = <K extends keyof SignedClinicMemoData>(k: K, v: SignedClinicMemoData[K]) =>
@@ -98,80 +95,32 @@ export const SignedClinicMemoForm = () => {
 
     setBusy(true);
     try {
-      const envelopeId = newEnvelopeId();
-      const signedAt = new Date().toISOString();
-      const ip = await fetchIp();
-      const ua = navigator.userAgent;
+      let activeEnvelopeId = envelopeId;
+      if (!activeEnvelopeId) {
+        const created = await apiCreateEnvelope();
+        activeEnvelopeId = created.envelopeId;
+        setEnvelopeId(created.envelopeId);
+      }
 
       const finalData: SignedClinicMemoData = {
         ...data,
-        occuMedRepDate: data.occuMedRepDate || signedAt.slice(0, 10),
-        clinicRepDate: data.clinicRepDate || signedAt.slice(0, 10),
+        occuMedRepDate: data.occuMedRepDate || new Date().toISOString().slice(0, 10),
+        clinicRepDate: data.clinicRepDate || new Date().toISOString().slice(0, 10),
       };
-
-      const pdfBytes = await generateSignedClinicPdf(finalData, envelopeId);
-      const pdfHash = await sha256(pdfBytes);
-      const certBytes = await generateCertificate(envelopeId, pdfHash, {
-        createdAt: createdAtRef.current,
+      const finalized = await apiFinalizeEnvelope(activeEnvelopeId, {
+        data: finalData,
         viewedAt: viewedAtRef.current,
-        signedAt,
-        ipAddress: ip,
-        userAgent: ua,
-        occuMedRepName: finalData.occuMedRepName,
-        clinicRepFullName: finalData.clinicRepFullName,
-        agreedElectronic: finalData.agreedElectronic,
+        recipientEmail: recipientEmail || undefined,
       });
 
-      // Persist to Supabase (best effort — UI still works if these fail)
-      try {
-        const pdfPath = `${envelopeId}/document.pdf`;
-        const certPath = `${envelopeId}/certificate.pdf`;
-        const toBlob = (bytes: Uint8Array) => {
-          const buf = new ArrayBuffer(bytes.byteLength);
-          new Uint8Array(buf).set(bytes);
-          return new Blob([buf], { type: "application/pdf" });
-        };
-
-        await supabase.storage.from("envelopes").upload(pdfPath, toBlob(pdfBytes), {
-          contentType: "application/pdf",
-          upsert: true,
-        });
-        await supabase.storage.from("envelopes").upload(certPath, toBlob(certBytes), {
-          contentType: "application/pdf",
-          upsert: true,
-        });
-
-        await supabase.from("envelopes").insert({
-          envelope_id: envelopeId,
-          pdf_hash: pdfHash,
-          pdf_path: pdfPath,
-          certificate_path: certPath,
-          created_at: createdAtRef.current,
-          viewed_at: viewedAtRef.current,
-          signed_at: signedAt,
-          ip_address: ip,
-          user_agent: ua,
-          occu_med_rep_name: finalData.occuMedRepName,
-          occu_med_rep_title: finalData.occuMedRepTitle,
-          clinic_rep_name: finalData.clinicRepFullName,
-          clinic_rep_title: finalData.clinicRepTitle,
-          agreed_electronic: finalData.agreedElectronic,
-          payload: finalData as any,
-        });
-      } catch (err) {
-        console.warn("Supabase persistence failed (UI still completed)", err);
-        toast({
-          title: "Saved locally",
-          description: "Could not persist to Supabase yet — run the setup SQL in your dashboard.",
-        });
-      }
-
-      downloadPdf(pdfBytes, `${envelopeId}-signed.pdf`);
-      setTimeout(() => downloadPdf(certBytes, `${envelopeId}-certificate.pdf`), 400);
+      const pdfBytes = base64PdfToBytes(finalized.pdfBase64);
+      const certBytes = base64PdfToBytes(finalized.certificateBase64);
+      downloadPdf(pdfBytes, `${finalized.envelopeId}-signed.pdf`);
+      setTimeout(() => downloadPdf(certBytes, `${finalized.envelopeId}-certificate.pdf`), 400);
 
       toast({
         title: "Signed & sealed",
-        description: `Envelope ${envelopeId} created. Document + certificate downloaded.`,
+        description: `Envelope ${finalized.envelopeId} finalized. Hash ${finalized.pdfHash.slice(0, 16)}…`,
       });
     } catch (e) {
       toast({ title: "Signing failed", description: String(e), variant: "destructive" });
@@ -337,6 +286,15 @@ export const SignedClinicMemoForm = () => {
               signatures and records for this transaction.
             </span>
           </label>
+
+          <Field label="Optional recipient email (server-side send)">
+            <TextInput
+              type="email"
+              placeholder="recipient@example.com"
+              value={recipientEmail}
+              onChange={(e) => setRecipientEmail(e.target.value)}
+            />
+          </Field>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 px-9 py-5 border-t border-border print-hide">
