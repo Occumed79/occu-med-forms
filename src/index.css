@@ -116,6 +116,12 @@ All colors MUST be HSL.
     --label: 210 27% 24%;
     --memo-bg: 215 40% 95%;
     --shadow-elevated: 0 4px 24px rgba(0, 0, 0, 0.1);
+    --shadow-card: 0 8px 28px rgba(8, 15, 30, 0.14);
+    --navy-deep: 218 65% 15%;
+    --navy-mid: 214 62% 34%;
+    --navy-orb-1: 212 80% 58%;
+    --navy-orb-2: 200 88% 66%;
+    --navy-orb-3: 186 93% 70%;
     --navy-deep: 218 65% 15%;
     --navy-mid: 214 62% 34%;
     --navy-orb-1: 212 80% 58%;
@@ -129,6 +135,18 @@ All colors MUST be HSL.
 }
 
 @layer components {
+  @keyframes navyDriftA {
+    0% { transform: translate(-12px, -4px) scale(1); opacity: 0.55; }
+    50% { transform: translate(18px, 8px) scale(1.1); opacity: 0.78; }
+    100% { transform: translate(-12px, -4px) scale(1); opacity: 0.55; }
+  }
+
+  @keyframes navyDriftB {
+    0% { transform: translate(10px, 10px) scale(0.95); opacity: 0.42; }
+    50% { transform: translate(-16px, -6px) scale(1.08); opacity: 0.72; }
+    100% { transform: translate(10px, 10px) scale(0.95); opacity: 0.42; }
+  }
+
   .form-card {
     max-width: 860px;
     margin: 0 auto;
@@ -162,6 +180,50 @@ All colors MUST be HSL.
     background: linear-gradient(130deg, hsl(var(--navy-deep)), hsl(var(--navy-mid)) 62%, hsl(var(--navy-orb-1)));
   }
 
+  .navy-orb {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(10px);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .navy-orb-1 {
+    width: 120px;
+    height: 120px;
+    left: -18px;
+    top: -24px;
+    background: radial-gradient(circle at 30% 30%, hsl(var(--navy-orb-2) / 0.95), hsl(var(--navy-orb-1) / 0));
+    animation: navyDriftA 8s ease-in-out infinite;
+  }
+
+  .navy-orb-2 {
+    width: 140px;
+    height: 140px;
+    right: -26px;
+    top: -24px;
+    background: radial-gradient(circle at 50% 50%, hsl(var(--navy-orb-1) / 0.82), hsl(var(--navy-orb-1) / 0));
+    animation: navyDriftB 9s ease-in-out infinite;
+  }
+
+  .navy-orb-3 {
+    width: 115px;
+    height: 115px;
+    left: 38%;
+    bottom: -60px;
+    background: radial-gradient(circle at 55% 42%, hsl(var(--navy-orb-3) / 0.62), hsl(var(--navy-orb-3) / 0));
+    animation: navyDriftA 10s ease-in-out infinite reverse;
+  }
+
+  .navy-orb-4 {
+    width: 90px;
+    height: 90px;
+    right: 30%;
+    bottom: -45px;
+    background: radial-gradient(circle at 40% 40%, hsl(var(--navy-orb-2) / 0.46), hsl(var(--navy-orb-2) / 0));
+    animation: navyDriftB 11s ease-in-out infinite reverse;
+  }
+
   .header-logo {
     height: 70px;
     width: auto;
@@ -180,6 +242,10 @@ All colors MUST be HSL.
     position: relative;
     z-index: 1;
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  }
+
+  .theme-navy .header-logo {
+    filter: brightness(0) invert(1);
   }
 
   .form-body {
@@ -281,6 +347,20 @@ All colors MUST be HSL.
   }
   .float-bubble.aurora { background: linear-gradient(130deg, #0a6664, #24c98a, #5b4fcf); }
   .float-bubble.navy { background: linear-gradient(130deg, hsl(var(--navy-deep)), hsl(var(--navy-mid)), hsl(var(--navy-orb-1))); }
+
+  .font-satisfy {
+    font-family: "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive;
+  }
+
+  .print-hide {
+    print-color-adjust: exact;
+  }
+
+  @media print {
+    .print-hide {
+      display: none !important;
+    }
+  }
 
   @media (max-width: 600px) {
     .aurora-header, .navy-header { flex-direction: column; text-align: center; padding: 20px; }
