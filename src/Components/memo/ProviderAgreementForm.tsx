@@ -39,8 +39,26 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
   const [busy, setBusy] = useState(false);
   const [includeOccuContact, setIncludeOccuContact] = useState(false);
   const [includeProviderContact, setIncludeProviderContact] = useState(false);
-  const [occuContact, setOccuContact] = useState({ name: "", email: "", phone: "", address: "" });
-  const [providerContact, setProviderContact] = useState({ name: "", email: "", phone: "", address: "" });
+  const [occuContact, setOccuContact] = useState({
+    organization: "Occu-Med",
+    contactName: "",
+    title: "",
+    email: "",
+    phone: "",
+    fax: "",
+    address: "",
+    billingEmail: "",
+  });
+  const [providerContact, setProviderContact] = useState({
+    organization: "",
+    contactName: "",
+    title: "",
+    email: "",
+    phone: "",
+    fax: "",
+    address: "",
+    afterHoursPhone: "",
+  });
   const { toast } = useToast();
 
   const set = <K extends keyof ClinicMemoData>(k: K, v: ClinicMemoData[K]) =>
@@ -61,10 +79,14 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
         attachmentPages.push({
           title: "Occu-Med Contact Information",
           fields: [
-            { label: "Name", value: occuContact.name },
+            { label: "Organization", value: occuContact.organization },
+            { label: "Primary Contact Name", value: occuContact.contactName },
+            { label: "Title", value: occuContact.title },
             { label: "Email", value: occuContact.email },
             { label: "Phone", value: occuContact.phone },
+            { label: "Fax", value: occuContact.fax },
             { label: "Address", value: occuContact.address },
+            { label: "Billing Email", value: occuContact.billingEmail },
           ],
         });
       }
@@ -73,9 +95,13 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
         attachmentPages.push({
           title: "Provider Contact Information",
           fields: [
-            { label: "Name", value: providerContact.name },
+            { label: "Organization", value: providerContact.organization },
+            { label: "Primary Contact Name", value: providerContact.contactName },
+            { label: "Title", value: providerContact.title },
             { label: "Email", value: providerContact.email },
             { label: "Phone", value: providerContact.phone },
+            { label: "After-hours Phone", value: providerContact.afterHoursPhone },
+            { label: "Fax", value: providerContact.fax },
             { label: "Address", value: providerContact.address },
           ],
         });
@@ -133,6 +159,19 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
             </Field>
           </Row>
 
+          <Row>
+            <Field label="Source of Pricing" required>
+              <TextInput placeholder="e.g. Email, Phone, Portal" value={data.sourceOfPricing} onChange={(e) => set("sourceOfPricing", e.target.value)} />
+            </Field>
+            <Field label="Clinic Representative Name">
+              <TextInput placeholder="Contact name" value={data.clinicRepName} onChange={(e) => set("clinicRepName", e.target.value)} />
+            </Field>
+          </Row>
+
+          <Field label="Method of Communication" required>
+            <TextInput placeholder="e.g. Email, Phone, Fax" value={data.methodOfComm} onChange={(e) => set("methodOfComm", e.target.value)} />
+          </Field>
+
           <Field label="Billing Terms" required>
             <Select value={data.billingTerms} onChange={(e) => set("billingTerms", e.target.value)}>
               <option value="" disabled></option>
@@ -141,6 +180,23 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
               <option>Payment at Time of Service</option>
             </Select>
           </Field>
+
+          <Row>
+            <Field label="New or Existing Provider" required>
+              <Select value={data.newOrExistingProvider} onChange={(e) => set("newOrExistingProvider", e.target.value)}>
+                <option value="" disabled></option>
+                <option>New Provider</option>
+                <option>Existing Provider</option>
+              </Select>
+            </Field>
+            <Field label="New or Updated Pricing" required>
+              <Select value={data.newOrUpdatedPricing} onChange={(e) => set("newOrUpdatedPricing", e.target.value)}>
+                <option value="" disabled></option>
+                <option>New Pricing</option>
+                <option>Updated Pricing</option>
+              </Select>
+            </Field>
+          </Row>
 
           <Row>
             <Field label="Provider Specialty / Practice">
@@ -165,6 +221,14 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
             <PriceTable rows={data.priceRows} onChange={(rows) => set("priceRows", rows)} />
           </Field>
 
+          <Field label="Additional Notes or Context Regarding Pricing">
+            <Textarea
+              placeholder="Relevant context, special conditions, background…"
+              value={data.notes}
+              onChange={(e) => set("notes", e.target.value)}
+            />
+          </Field>
+
           <hr className="section-divider" />
 
           <label className="flex items-center gap-2 text-sm mb-2">
@@ -180,6 +244,13 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
           {includeOccuContact && (
             <Row>
               <Field label="Occu-Med Contact Phone"><TextInput value={occuContact.phone} onChange={(e) => setOccuContact((s) => ({ ...s, phone: e.target.value }))} /></Field>
+              <Field label="Fax"><TextInput value={occuContact.fax} onChange={(e) => setOccuContact((s) => ({ ...s, fax: e.target.value }))} /></Field>
+            </Row>
+          )}
+          {includeOccuContact && (
+            <Row>
+              <Field label="Address"><TextInput value={occuContact.address} onChange={(e) => setOccuContact((s) => ({ ...s, address: e.target.value }))} /></Field>
+              <Field label="Billing Email"><TextInput type="email" value={occuContact.billingEmail} onChange={(e) => setOccuContact((s) => ({ ...s, billingEmail: e.target.value }))} /></Field>
               <Field label="Occu-Med Contact Address"><TextInput value={occuContact.address} onChange={(e) => setOccuContact((s) => ({ ...s, address: e.target.value }))} /></Field>
             </Row>
           )}
@@ -190,13 +261,25 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
           </label>
           {includeProviderContact && (
             <Row>
-              <Field label="Provider Contact Name"><TextInput value={providerContact.name} onChange={(e) => setProviderContact((s) => ({ ...s, name: e.target.value }))} /></Field>
+              <Field label="Organization"><TextInput value={providerContact.organization} onChange={(e) => setProviderContact((s) => ({ ...s, organization: e.target.value }))} /></Field>
+              <Field label="Primary Contact Name"><TextInput value={providerContact.contactName} onChange={(e) => setProviderContact((s) => ({ ...s, contactName: e.target.value }))} /></Field>
+            </Row>
+          )}
+          {includeProviderContact && (
+            <Row>
+              <Field label="Title"><TextInput value={providerContact.title} onChange={(e) => setProviderContact((s) => ({ ...s, title: e.target.value }))} /></Field>
               <Field label="Provider Contact Email"><TextInput type="email" value={providerContact.email} onChange={(e) => setProviderContact((s) => ({ ...s, email: e.target.value }))} /></Field>
             </Row>
           )}
           {includeProviderContact && (
             <Row>
               <Field label="Provider Contact Phone"><TextInput value={providerContact.phone} onChange={(e) => setProviderContact((s) => ({ ...s, phone: e.target.value }))} /></Field>
+              <Field label="After-hours Phone"><TextInput value={providerContact.afterHoursPhone} onChange={(e) => setProviderContact((s) => ({ ...s, afterHoursPhone: e.target.value }))} /></Field>
+            </Row>
+          )}
+          {includeProviderContact && (
+            <Row>
+              <Field label="Fax"><TextInput value={providerContact.fax} onChange={(e) => setProviderContact((s) => ({ ...s, fax: e.target.value }))} /></Field>
               <Field label="Provider Contact Address"><TextInput value={providerContact.address} onChange={(e) => setProviderContact((s) => ({ ...s, address: e.target.value }))} /></Field>
             </Row>
           )}

@@ -18,6 +18,7 @@ export async function generateSignedPdf({ envelopeId, data, signedAt, viewedAt, 
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   page.drawRectangle({ x: 0, y: 742, width: 612, height: 50, color: rgb(0.05, 0.12, 0.24) });
+  addLine(page, "Network Management Provider Pricing Sheet", 32, 760, bold, 16);
   addLine(page, "Clinic Pricing Memo (Signed)", 32, 760, bold, 18);
   addLine(page, `Envelope ID: ${envelopeId}`, 395, 760, regular, 9);
 
