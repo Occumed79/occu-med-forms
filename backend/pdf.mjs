@@ -4,6 +4,13 @@ function addLine(page, text, x, y, font, size = 11) {
   page.drawText(text, { x, y, size, font, color: rgb(0.12, 0.18, 0.24) });
 }
 
+function fmtDateLong(v) {
+  if (!v) return "—";
+  const d = new Date(`${v}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return v;
+  return d.toLocaleDateString("en-US", { month: "long", day: "2-digit", year: "numeric" }).toUpperCase();
+}
+
 export async function generateSignedPdf({ envelopeId, data, signedAt, viewedAt, ip, userAgent }) {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([612, 792]);

@@ -22,6 +22,7 @@ const initial: SignedClinicMemoData = {
   directorName: "",
   dateOfMemo: "",
   dateOfPricingReceived: "",
+  billingTerms: "",
   sourceOfPricing: "",
   clinicRepName: "",
   methodOfComm: "",
@@ -134,7 +135,7 @@ export const SignedClinicMemoForm = () => {
       <ComponentSidebar onAdd={(c) => addComponent(c.name)} />
 
       <div className="form-card flex-1" style={{ maxWidth: "none" }}>
-        <NavyHeader title="Clinic Pricing Memo (Signed)" />
+        <NavyHeader title="Network Management Provider Pricing Sheet" />
         <div className="form-body">
           <Row>
             <Field label="Network Management Analyst Name" required>
@@ -146,10 +147,10 @@ export const SignedClinicMemoForm = () => {
           </Row>
 
           <Row>
-            <Field label="Date of Memo" required hint="dd-MMM-yyyy">
+            <Field label="Pricing Established" required>
               <TextInput type="date" value={data.dateOfMemo} onChange={(e) => set("dateOfMemo", e.target.value)} />
             </Field>
-            <Field label="Date of Pricing Received" required hint="dd-MMM-yyyy">
+            <Field label="Pricing Expires" required>
               <TextInput type="date" value={data.dateOfPricingReceived} onChange={(e) => set("dateOfPricingReceived", e.target.value)} />
             </Field>
           </Row>
@@ -165,6 +166,15 @@ export const SignedClinicMemoForm = () => {
 
           <Field label="Method of Communication" required>
             <TextInput placeholder="e.g. Email, Phone, Fax" value={data.methodOfComm} onChange={(e) => set("methodOfComm", e.target.value)} />
+          </Field>
+
+          <Field label="Billing Terms" required>
+            <Select value={data.billingTerms} onChange={(e) => set("billingTerms", e.target.value)}>
+              <option value="" disabled></option>
+              <option>Net 30</option>
+              <option>Net 15</option>
+              <option>Payment at Time of Service</option>
+            </Select>
           </Field>
 
           <hr className="section-divider" />
@@ -246,6 +256,7 @@ export const SignedClinicMemoForm = () => {
                 <Select value={data.occuMedRepTitle} onChange={(e) => set("occuMedRepTitle", e.target.value)}>
                   <option>Network Management Analyst</option>
                   <option>Director of Network Management</option>
+                  <option>Controller</option>
                 </Select>
                 <TextInput placeholder="Full name" value={data.occuMedRepName} onChange={(e) => set("occuMedRepName", e.target.value)} />
                 <TextInput type="date" value={data.occuMedRepDate} onChange={(e) => set("occuMedRepDate", e.target.value)} />
@@ -295,6 +306,10 @@ export const SignedClinicMemoForm = () => {
               onChange={(e) => setRecipientEmail(e.target.value)}
             />
           </Field>
+
+          <div className="text-[11px] text-muted-foreground mt-2">
+            Prices listed are inclusive of all fees and service charges.
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 px-9 py-5 border-t border-border print-hide">

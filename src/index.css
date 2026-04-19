@@ -172,7 +172,20 @@ All colors MUST be HSL.
     position: absolute;
     inset: -60% -30%;
     background: conic-gradient(from 200deg at 40% 60%, #0d1f3c 0deg, #0b3d52 40deg, #0a6664 75deg, #1a9e6e 110deg, #24c98a 140deg, #2ec4c4 170deg, #5b4fcf 210deg, #9b30c8 245deg, #c4286e 275deg, #1a3c8a 310deg, #0d1f3c 360deg);
+    background-size: 250% 250%;
     filter: blur(28px);
+    animation: auroraShift 14s ease-in-out infinite;
+    z-index: 0;
+  }
+
+  .aurora-header::after {
+    content: "";
+    position: absolute;
+    inset: -35% -15%;
+    background: radial-gradient(circle at 25% 60%, rgba(36, 201, 138, 0.35), transparent 55%),
+      radial-gradient(circle at 72% 38%, rgba(91, 79, 207, 0.33), transparent 58%);
+    filter: blur(18px);
+    animation: auroraShift 18s ease-in-out infinite reverse;
     z-index: 0;
   }
 
@@ -235,7 +248,7 @@ All colors MUST be HSL.
 
   .header-title {
     font-family: "Source Serif 4", serif;
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 600;
     color: #fff;
     line-height: 1.2;
@@ -344,6 +357,16 @@ All colors MUST be HSL.
     font-weight: 700;
     padding: 12px 18px;
     box-shadow: 0 10px 25px rgba(2, 6, 23, 0.3);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .float-bubble::after {
+    content: "";
+    position: absolute;
+    inset: -160% -30%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 60%);
+    animation: navyDriftA 5s ease-in-out infinite;
+    z-index: -1;
   }
   .float-bubble.aurora { background: linear-gradient(130deg, #0a6664, #24c98a, #5b4fcf); }
   .float-bubble.navy { background: linear-gradient(130deg, hsl(var(--navy-deep)), hsl(var(--navy-mid)), hsl(var(--navy-orb-1))); }

@@ -20,6 +20,7 @@ const initial: NetworkMemoData = {
   directorName: "",
   dateOfMemo: "",
   dateOfPricingReceived: "",
+  billingTerms: "",
   sourceOfPricing: "",
   clinicRepName: "",
   methodOfComm: "",
