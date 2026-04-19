@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Building2, FileText, ShieldCheck } from "lucide-react";
 
-export type FormVariant = "network" | "clinic" | "clinic-signed";
+export type FormVariant =
+  | "network"
+  | "clinic"
+  | "clinic-signed"
+  | "provider-agreement"
+  | "provider-agreement-terms";
 
 interface Props {
   variant: FormVariant;
@@ -29,6 +34,8 @@ export const FloatingFormSelector = ({ variant, onSelect }: Props) => {
     { value: "network", label: "Network Management", desc: "Standard internal pricing memo", icon: FileText },
     { value: "clinic", label: "Clinic Version", desc: "Provider-facing memo with exam pricing", icon: Building2 },
     { value: "clinic-signed", label: "Clinic Version (Signed)", desc: "With dual signatures, audit trail & certificate", icon: ShieldCheck },
+    { value: "provider-agreement", label: "Provider Service Agreement", desc: "Agreement template variant", icon: FileText },
+    { value: "provider-agreement-terms", label: "Provider Service Agreement + Terms", desc: "Agreement with Terms of Service block", icon: FileText },
   ];
 
   return (

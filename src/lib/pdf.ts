@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 import logo from "@/assets/occu-med-logo.png";
 import type { ClinicMemoData, NetworkMemoData, SignedClinicMemoData } from "@/types/memo";
 
@@ -446,4 +447,29 @@ export function downloadPdf(bytes: Uint8Array, filename: string) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export async function appendAttachmentPages(
+  basePdfBytes: Uint8Array,
+  pages: { title: string; fields: Array<{ label: string; value: string }> }[],
+): Promise<Uint8Array> {
+  if (!pages.length) return basePdfBytes;
+  const pdfDoc = await PDFDocument.load(basePdfBytes);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  for (const pageData of pages) {
+    const page = pdfDoc.addPage([595, 842]); // A4 points
+    let y = 790;
+    page.drawText(pageData.title, { x: 40, y, size: 18, font: bold });
+    y -= 28;
+    for (const field of pageData.fields) {
+      page.drawText(field.label.toUpperCase(), { x: 40, y, size: 9, font: bold });
+      y -= 14;
+      page.drawText(field.value || "—", { x: 40, y, size: 11, font });
+      y -= 22;
+    }
+  }
+
+  return pdfDoc.save();
 }

@@ -160,6 +160,15 @@ export const NetworkMemoForm = () => {
             <TextInput placeholder="e.g. Email, Phone, Fax" value={data.methodOfComm} onChange={(e) => set("methodOfComm", e.target.value)} />
           </Field>
 
+          <Field label="Billing Terms" required>
+            <Select value={data.billingTerms} onChange={(e) => set("billingTerms", e.target.value)}>
+              <option value="" disabled></option>
+              <option>Net 30</option>
+              <option>Net 15</option>
+              <option>Payment at Time of Service</option>
+            </Select>
+          </Field>
+
           <hr className="section-divider" />
 
           <Row>
