@@ -139,10 +139,10 @@ export const NetworkMemoForm = () => {
           </Row>
 
           <Row>
-            <Field label="Pricing Established" required>
+            <Field label="Date of Memo" required hint="dd-MMM-yyyy">
               <TextInput type="date" value={data.dateOfMemo} onChange={(e) => set("dateOfMemo", e.target.value)} />
             </Field>
-            <Field label="Pricing Expires" required>
+            <Field label="Date of Pricing Received" required hint="dd-MMM-yyyy">
               <TextInput type="date" value={data.dateOfPricingReceived} onChange={(e) => set("dateOfPricingReceived", e.target.value)} />
             </Field>
           </Row>
@@ -158,15 +158,6 @@ export const NetworkMemoForm = () => {
 
           <Field label="Method of Communication" required>
             <TextInput placeholder="e.g. Email, Phone, Fax" value={data.methodOfComm} onChange={(e) => set("methodOfComm", e.target.value)} />
-          </Field>
-
-          <Field label="Billing Terms" required>
-            <Select value={data.billingTerms} onChange={(e) => set("billingTerms", e.target.value)}>
-              <option value="" disabled></option>
-              <option>Net 30</option>
-              <option>Net 15</option>
-              <option>Payment at Time of Service</option>
-            </Select>
           </Field>
 
           <hr className="section-divider" />
