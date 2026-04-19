@@ -18,6 +18,7 @@ export interface BaseMemoData {
   directorName: string;
   dateOfMemo: string;
   dateOfPricingReceived: string;
+  billingTerms: string;
   sourceOfPricing: string;
   clinicRepName: string;
   methodOfComm: string;
