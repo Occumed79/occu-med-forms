@@ -3,6 +3,7 @@ import { ClinicMemoForm } from "@/components/memo/ClinicMemoForm";
 import { FloatingFormSelector, type FormVariant } from "@/components/memo/FloatingFormSelector";
 import { NetworkMemoForm } from "@/components/memo/NetworkMemoForm";
 import { SignedClinicMemoForm } from "@/components/memo/SignedClinicMemoForm";
+import { ProviderAgreementForm } from "@/components/memo/ProviderAgreementForm";
 
 const Index = () => {
   const [variant, setVariant] = useState<FormVariant>("network");
@@ -13,6 +14,8 @@ const Index = () => {
       {variant === "network" && <NetworkMemoForm />}
       {variant === "clinic" && <ClinicMemoForm />}
       {variant === "clinic-signed" && <SignedClinicMemoForm />}
+      {variant === "provider-agreement" && <ProviderAgreementForm includeTermsBlock={false} />}
+      {variant === "provider-agreement-terms" && <ProviderAgreementForm includeTermsBlock />}
       <FloatingFormSelector variant={variant} onSelect={setVariant} />
     </main>
   );
