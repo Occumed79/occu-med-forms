@@ -122,6 +122,9 @@ All colors MUST be HSL.
     --navy-orb-1: 212 80% 58%;
     --navy-orb-2: 200 88% 66%;
     --navy-orb-3: 186 93% 70%;
+    --navy-deep: 218 65% 15%;
+    --navy-mid: 214 62% 34%;
+    --navy-orb-1: 212 80% 58%;
   }
 
   body {

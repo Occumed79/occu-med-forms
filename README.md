@@ -128,3 +128,4 @@ npm run dev
 
 - The signed workflow now depends on backend availability for finalize operations.
 - Keep Supabase Row-Level Security and bucket policies aligned with your production security model.
+- Linux builds are case-sensitive. A `src/components` symlink is included to support existing `@/components/...` imports while the source tree remains under `src/Components`.

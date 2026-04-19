@@ -18,7 +18,7 @@ export async function generateSignedPdf({ envelopeId, data, signedAt, viewedAt, 
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   page.drawRectangle({ x: 0, y: 742, width: 612, height: 50, color: rgb(0.05, 0.12, 0.24) });
-  addLine(page, "Network Management Provider Pricing Sheet", 32, 760, bold, 16);
+  addLine(page, "Clinic Pricing Memo (Signed)", 32, 760, bold, 18);
   addLine(page, `Envelope ID: ${envelopeId}`, 395, 760, regular, 9);
 
   let y = 712;
@@ -30,9 +30,8 @@ export async function generateSignedPdf({ envelopeId, data, signedAt, viewedAt, 
 
   pair("Network Management Analyst", data.analystName);
   pair("Director of Network Management", data.directorName);
-  pair("Pricing Established", fmtDateLong(data.dateOfMemo));
-  pair("Pricing Expires", fmtDateLong(data.dateOfPricingReceived));
-  pair("Billing Terms", data.billingTerms);
+  pair("Date of Memo", data.dateOfMemo);
+  pair("Date of Pricing Received", data.dateOfPricingReceived);
   pair("Source of Pricing", data.sourceOfPricing);
   pair("Method of Communication", data.methodOfComm);
   pair("New or Existing Provider", data.newOrExistingProvider);
