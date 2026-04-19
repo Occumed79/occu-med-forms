@@ -124,7 +124,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
       <div className="form-card flex-1" style={{ maxWidth: "none" }}>
         <NavyHeader title="Provider Service Agreement" />
         <div className="form-body">
-            {includeTermsBlock && (
+          {includeTermsBlock && (
             <div className="rounded-lg border border-border bg-muted/30 p-4 mb-5 space-y-4">
               <div>
                 <h3 className="text-sm font-bold">Scheduling Process</h3>
@@ -237,13 +237,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
           </label>
           {includeOccuContact && (
             <Row>
-              <Field label="Organization"><TextInput value={occuContact.organization} onChange={(e) => setOccuContact((s) => ({ ...s, organization: e.target.value }))} /></Field>
-              <Field label="Primary Contact Name"><TextInput value={occuContact.contactName} onChange={(e) => setOccuContact((s) => ({ ...s, contactName: e.target.value }))} /></Field>
-            </Row>
-          )}
-          {includeOccuContact && (
-            <Row>
-              <Field label="Title"><TextInput value={occuContact.title} onChange={(e) => setOccuContact((s) => ({ ...s, title: e.target.value }))} /></Field>
+              <Field label="Occu-Med Contact Name"><TextInput value={occuContact.name} onChange={(e) => setOccuContact((s) => ({ ...s, name: e.target.value }))} /></Field>
               <Field label="Occu-Med Contact Email"><TextInput type="email" value={occuContact.email} onChange={(e) => setOccuContact((s) => ({ ...s, email: e.target.value }))} /></Field>
             </Row>
           )}
@@ -257,6 +251,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
             <Row>
               <Field label="Address"><TextInput value={occuContact.address} onChange={(e) => setOccuContact((s) => ({ ...s, address: e.target.value }))} /></Field>
               <Field label="Billing Email"><TextInput type="email" value={occuContact.billingEmail} onChange={(e) => setOccuContact((s) => ({ ...s, billingEmail: e.target.value }))} /></Field>
+              <Field label="Occu-Med Contact Address"><TextInput value={occuContact.address} onChange={(e) => setOccuContact((s) => ({ ...s, address: e.target.value }))} /></Field>
             </Row>
           )}
 
