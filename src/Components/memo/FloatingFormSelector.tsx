@@ -6,7 +6,9 @@ export type FormVariant =
   | "clinic"
   | "clinic-signed"
   | "provider-agreement"
-  | "provider-agreement-terms";
+  | "provider-agreement-terms"
+  | "occu-contact-sheet"
+  | "provider-contact-sheet";
 
 interface Props {
   variant: FormVariant;
@@ -19,7 +21,7 @@ export const FloatingFormSelector = ({ variant, onSelect }: Props) => {
 
   // Bubble visual style follows current variant: aurora when on Network, navy when on a Clinic form.
   const bubbleClass = variant === "network" ? "aurora" : "navy";
-  const bubbleLabel = variant === "network" ? "Clinic Version" : "Network Version";
+  const bubbleLabel = "Forms";
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -32,10 +34,12 @@ export const FloatingFormSelector = ({ variant, onSelect }: Props) => {
 
   const options: { value: FormVariant; label: string; desc: string; icon: typeof FileText }[] = [
     { value: "network", label: "Network Management", desc: "Standard internal pricing memo", icon: FileText },
-    { value: "clinic", label: "Clinic Version", desc: "Provider-facing memo with exam pricing", icon: Building2 },
-    { value: "clinic-signed", label: "Clinic Version (Signed)", desc: "With dual signatures, audit trail & certificate", icon: ShieldCheck },
+    { value: "clinic", label: "Provider Pricing Sheet", desc: "Provider-facing memo with exam pricing", icon: Building2 },
+    { value: "clinic-signed", label: "Provider Pricing Sheet (Signed)", desc: "With dual signatures, audit trail & certificate", icon: ShieldCheck },
     { value: "provider-agreement", label: "Provider Service Agreement", desc: "Agreement template variant", icon: FileText },
     { value: "provider-agreement-terms", label: "Provider Service Agreement + Terms", desc: "Agreement with Terms of Service block", icon: FileText },
+    { value: "occu-contact-sheet", label: "Occu-Med Contact Sheet", desc: "Standalone contact information sheet", icon: FileText },
+    { value: "provider-contact-sheet", label: "Provider Contact Sheet", desc: "Standalone provider contact information", icon: FileText },
   ];
 
   return (

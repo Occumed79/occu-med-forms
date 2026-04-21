@@ -146,6 +146,9 @@ export const ClinicMemoForm = () => {
           <Field label="Pricing">
             <PriceTable rows={data.priceRows} onChange={(rows) => set("priceRows", rows)} />
           </Field>
+          <div className="text-[11px] text-muted-foreground mt-2 mb-2">
+            Prices listed are inclusive of all fees and service charges.
+          </div>
 
           <Field label="Additional Notes or Context Regarding Pricing">
             <Textarea
@@ -155,9 +158,6 @@ export const ClinicMemoForm = () => {
             />
           </Field>
 
-          <div className="text-[11px] text-muted-foreground mt-2">
-            Prices listed are inclusive of all fees and service charges.
-          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 px-9 py-5 border-t border-border print-hide">

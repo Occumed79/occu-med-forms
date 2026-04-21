@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AuroraHeader } from "./Headers";
 import { Field, Row, TextInput, Select, Textarea } from "./FormAtoms";
 import { AddressBlock } from "./AddressBlock";
+import { PriceTable } from "./PriceTable";
+import { ComponentSidebar } from "./ComponentSidebar";
 import { downloadPdf, generateNetworkPdf } from "@/lib/pdf";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Paperclip } from "lucide-react";
@@ -31,6 +33,7 @@ const initial: NetworkMemoData = {
   acquisitionType: "",
   clinicType: "",
   client: "",
+  priceRows: [],
 };
 
 const CLINIC_TYPES_GROUPED: { label: string; options: string[] }[] = [
@@ -71,6 +74,17 @@ export const NetworkMemoForm = () => {
 
   const set = <K extends keyof NetworkMemoData>(k: K, v: NetworkMemoData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
+  const addComponent = (name: string) =>
+    set("priceRows", [...data.priceRows, { id: `row-${Date.now()}-${Math.random()}`, component: name, price: "" }]);
+
+  const emailConfigured = useMemo(
+    () => Boolean(emailSettings.publicKey && emailSettings.serviceId && emailSettings.templateId),
+    [emailSettings],
+  );
+
+  useEffect(() => {
+    localStorage.setItem(EMAIL_SETTINGS_KEY, JSON.stringify(emailSettings));
+  }, [emailSettings]);
 
   const emailConfigured = useMemo(
     () => Boolean(emailSettings.publicKey && emailSettings.serviceId && emailSettings.templateId),
@@ -126,7 +140,9 @@ export const NetworkMemoForm = () => {
         <Settings size={18} />
       </button>
 
-      <div className="form-card">
+      <div className="theme-navy flex flex-col md:flex-row gap-6 max-w-[1200px] mx-auto items-start">
+        <ComponentSidebar onAdd={(c) => addComponent(c.name)} />
+      <div className="form-card flex-1" style={{ maxWidth: "none" }}>
         <AuroraHeader title="Network Management Pricing Memo" />
         <div className="form-body">
           <Row>
@@ -139,10 +155,10 @@ export const NetworkMemoForm = () => {
           </Row>
 
           <Row>
-            <Field label="Date of Memo" required hint="dd-MMM-yyyy">
+            <Field label="Pricing Established" required>
               <TextInput type="date" value={data.dateOfMemo} onChange={(e) => set("dateOfMemo", e.target.value)} />
             </Field>
-            <Field label="Date of Pricing Received" required hint="dd-MMM-yyyy">
+            <Field label="Pricing Expires" required>
               <TextInput type="date" value={data.dateOfPricingReceived} onChange={(e) => set("dateOfPricingReceived", e.target.value)} />
             </Field>
           </Row>
@@ -205,6 +221,11 @@ export const NetworkMemoForm = () => {
 
           <hr className="section-divider" />
 
+          <Field label="Pricing">
+            <PriceTable rows={data.priceRows} onChange={(rows) => set("priceRows", rows)} />
+          </Field>
+          <div className="text-[11px] text-muted-foreground mt-2 mb-4">Prices listed are inclusive of all fees and service charges.</div>
+
           <Field label="Clinic Address" required>
             <AddressBlock value={data.address} onChange={(a) => set("address", a)} />
           </Field>
@@ -256,6 +277,7 @@ export const NetworkMemoForm = () => {
             <span className={`emailjs-status ${emailConfigured ? "configured" : "not-configured"}`}>
               {emailConfigured ? "Configured" : "Not configured"}
             </span>
+            <span className="text-[11px] text-muted-foreground">Saved in this browser so you do not re-enter each time.</span>
           </div>
           <div className="action-right">
             <button type="button" onClick={handleDownload} disabled={busy} className="btn btn-secondary">
@@ -266,6 +288,7 @@ export const NetworkMemoForm = () => {
             </button>
           </div>
         </div>
+      </div>
       </div>
 
       <div className={`modal-overlay ${showSettings ? "open" : ""}`} onClick={() => setShowSettings(false)}>

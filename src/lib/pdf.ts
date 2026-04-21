@@ -215,10 +215,14 @@ export async function generateNetworkPdf(d: NetworkMemoData): Promise<Uint8Array
     { label: "Client", value: d.client },
   ], y, pageW);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(13, 31, 60);
+  doc.text("Pricing", 14, y + 4);
+  y = drawTable(doc, d.priceRows.filter((r) => r.component || r.price), y + 8, pageW);
   y = drawNotes(doc, "Clinic Address", fmtAddress(d.address), y + 4, pageW);
   y = drawNotes(doc, "Notes or Context Regarding the Pricing Received", d.notes, y + 2, pageW);
-
-  return doc.output("arraybuffer") as unknown as Uint8Array;
+  return new Uint8Array(doc.output("arraybuffer") as ArrayBuffer);
 }
 
 export async function generateClinicPdf(d: ClinicMemoData): Promise<Uint8Array> {
@@ -251,7 +255,7 @@ export async function generateClinicPdf(d: ClinicMemoData): Promise<Uint8Array> 
 
   y = drawNotes(doc, "Additional Notes or Context Regarding Pricing", d.notes, y + 4, pageW);
 
-  return doc.output("arraybuffer") as unknown as Uint8Array;
+  return new Uint8Array(doc.output("arraybuffer") as ArrayBuffer);
 }
 
 export async function generateSignedClinicPdf(
@@ -359,7 +363,7 @@ export async function generateSignedClinicPdf(
   doc.setTextColor(120, 130, 145);
   doc.text(`Envelope ID: ${envelopeId}`, 14, pageH - 8);
 
-  return doc.output("arraybuffer") as unknown as Uint8Array;
+  return new Uint8Array(doc.output("arraybuffer") as ArrayBuffer);
 }
 
 export async function generateCertificate(
@@ -422,7 +426,7 @@ export async function generateCertificate(
     { maxWidth: pageW - 28 },
   );
 
-  return doc.output("arraybuffer") as unknown as Uint8Array;
+  return new Uint8Array(doc.output("arraybuffer") as ArrayBuffer);
 }
 
 export async function sha256(bytes: Uint8Array): Promise<string> {
@@ -435,9 +439,10 @@ export async function sha256(bytes: Uint8Array): Promise<string> {
     .join("");
 }
 
-export function downloadPdf(bytes: Uint8Array, filename: string) {
-  const buf = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(buf).set(bytes);
+export function downloadPdf(bytes: Uint8Array | ArrayBuffer, filename: string) {
+  const src = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const buf = new ArrayBuffer(src.byteLength);
+  new Uint8Array(buf).set(src);
   const blob = new Blob([buf], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -469,6 +474,27 @@ export async function appendAttachmentPages(
       page.drawText(field.value || "—", { x: 40, y, size: 11, font });
       y -= 22;
     }
+  }
+
+  return pdfDoc.save();
+}
+
+export async function generateContactSheetPdf(
+  title: string,
+  fields: Array<{ label: string; value: string }>,
+): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595, 842]);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  page.drawText(title, { x: 40, y: 790, size: 20, font: bold });
+  let y = 752;
+  for (const field of fields) {
+    page.drawText(field.label.toUpperCase(), { x: 40, y, size: 9, font: bold });
+    y -= 14;
+    page.drawText(field.value || "—", { x: 40, y, size: 11, font });
+    y -= 22;
   }
 
   return pdfDoc.save();

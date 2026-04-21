@@ -122,9 +122,6 @@ All colors MUST be HSL.
     --navy-orb-1: 212 80% 58%;
     --navy-orb-2: 200 88% 66%;
     --navy-orb-3: 186 93% 70%;
-    --navy-deep: 218 65% 15%;
-    --navy-mid: 214 62% 34%;
-    --navy-orb-1: 212 80% 58%;
   }
 
   body {
@@ -168,7 +165,8 @@ All colors MUST be HSL.
     padding: 22px 36px;
     display: flex;
     align-items: center;
-    gap: 24px;
+    justify-content: center;
+    gap: 18px;
     overflow: hidden;
     background: #090e1a;
   }
@@ -252,9 +250,22 @@ All colors MUST be HSL.
     filter: brightness(0) invert(1);
   }
 
+  .form-card > .aurora-header .header-logo,
+  .form-card > .navy-header .header-logo {
+    position: absolute;
+    left: 32px;
+  }
+
+  .form-card > .aurora-header .header-title,
+  .form-card > .navy-header .header-title {
+    text-align: center;
+    max-width: min(92%, 700px);
+    margin: 0 auto;
+  }
+
   .header-title {
     font-family: "Source Serif 4", serif;
-    font-size: 30px;
+    font-size: 34px;
     font-weight: 600;
     color: #fff;
     line-height: 1.2;
@@ -300,6 +311,14 @@ All colors MUST be HSL.
   .modal-field input:focus {
     border-color: #24c98a;
     box-shadow: 0 0 0 3px rgba(36, 201, 138, 0.18);
+  }
+
+  .theme-navy .field-input:focus,
+  .theme-navy .field-select:focus,
+  .theme-navy .field-textarea:focus,
+  .theme-navy .address-block input:focus {
+    border-color: hsl(var(--navy-orb-1));
+    box-shadow: 0 0 0 3px hsl(var(--navy-orb-1) / 0.22);
   }
 
   .field-select { appearance: none; background-position: right 12px center; background-repeat: no-repeat; padding-right: 34px; }
@@ -393,6 +412,7 @@ All colors MUST be HSL.
 
   @media (max-width: 600px) {
     .aurora-header, .navy-header { flex-direction: column; text-align: center; padding: 20px; }
+    .header-title { font-size: 28px; }
     .form-body { padding: 20px; }
     .field-row, .address-row { grid-template-columns: 1fr; }
     .action-bar { padding: 16px 20px; }

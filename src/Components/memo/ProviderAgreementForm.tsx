@@ -59,6 +59,10 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
     address: "",
     afterHoursPhone: "",
   });
+  const [signatureName, setSignatureName] = useState("");
+  const [signatureTitle, setSignatureTitle] = useState("");
+  const [signatureDate, setSignatureDate] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
   const { toast } = useToast();
 
   const set = <K extends keyof ClinicMemoData>(k: K, v: ClinicMemoData[K]) =>
@@ -115,6 +119,19 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleSend = async () => {
+    if (!recipientEmail.trim()) {
+      toast({ title: "Recipient email required", description: "Enter an email address before sending.", variant: "destructive" });
+      return;
+    }
+    await handleDownload();
+    const subject = encodeURIComponent(`Provider Service Agreement${data.dateOfMemo ? ` - ${data.dateOfMemo}` : ""}`);
+    const body = encodeURIComponent(
+      `Please see attached Provider Service Agreement.\n\nAnalyst: ${data.analystName || "N/A"}\nSigned by: ${signatureName || "N/A"}`,
+    );
+    window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -220,6 +237,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
           <Field label="Pricing">
             <PriceTable rows={data.priceRows} onChange={(rows) => set("priceRows", rows)} />
           </Field>
+          <div className="text-[11px] text-muted-foreground mt-2 mb-2">Prices listed are inclusive of all fees and service charges.</div>
 
           <Field label="Additional Notes or Context Regarding Pricing">
             <Textarea
@@ -237,7 +255,13 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
           </label>
           {includeOccuContact && (
             <Row>
-              <Field label="Occu-Med Contact Name"><TextInput value={occuContact.name} onChange={(e) => setOccuContact((s) => ({ ...s, name: e.target.value }))} /></Field>
+              <Field label="Organization"><TextInput value={occuContact.organization} onChange={(e) => setOccuContact((s) => ({ ...s, organization: e.target.value }))} /></Field>
+              <Field label="Primary Contact Name"><TextInput value={occuContact.contactName} onChange={(e) => setOccuContact((s) => ({ ...s, contactName: e.target.value }))} /></Field>
+            </Row>
+          )}
+          {includeOccuContact && (
+            <Row>
+              <Field label="Title"><TextInput value={occuContact.title} onChange={(e) => setOccuContact((s) => ({ ...s, title: e.target.value }))} /></Field>
               <Field label="Occu-Med Contact Email"><TextInput type="email" value={occuContact.email} onChange={(e) => setOccuContact((s) => ({ ...s, email: e.target.value }))} /></Field>
             </Row>
           )}
@@ -251,7 +275,6 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
             <Row>
               <Field label="Address"><TextInput value={occuContact.address} onChange={(e) => setOccuContact((s) => ({ ...s, address: e.target.value }))} /></Field>
               <Field label="Billing Email"><TextInput type="email" value={occuContact.billingEmail} onChange={(e) => setOccuContact((s) => ({ ...s, billingEmail: e.target.value }))} /></Field>
-              <Field label="Occu-Med Contact Address"><TextInput value={occuContact.address} onChange={(e) => setOccuContact((s) => ({ ...s, address: e.target.value }))} /></Field>
             </Row>
           )}
 
@@ -284,10 +307,30 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
             </Row>
           )}
 
-          <div className="text-[11px] text-muted-foreground mt-2">Prices listed are inclusive of all fees and service charges.</div>
+          <hr className="section-divider" />
+          <h3 className="text-base font-semibold text-[hsl(var(--label))] mb-3">Signature</h3>
+          <Row>
+            <Field label="Signature (typed name)" required>
+              <TextInput placeholder="Type your full name to sign" value={signatureName} onChange={(e) => setSignatureName(e.target.value)} />
+            </Field>
+            <Field label="Title">
+              <TextInput placeholder="e.g., Office Manager" value={signatureTitle} onChange={(e) => setSignatureTitle(e.target.value)} />
+            </Field>
+          </Row>
+          <Row>
+            <Field label="Date Signed">
+              <TextInput type="date" value={signatureDate} onChange={(e) => setSignatureDate(e.target.value)} />
+            </Field>
+            <Field label="Send To (Recipient Email)">
+              <TextInput type="email" placeholder="recipient@example.com" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} />
+            </Field>
+          </Row>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 px-9 py-5 border-t border-border print-hide">
+          <button type="button" onClick={handleSend} disabled={busy} className="btn btn-secondary disabled:opacity-60">
+            {busy ? "Generating…" : "Send Memo"}
+          </button>
           <button type="button" onClick={handleDownload} disabled={busy} className="btn-base btn-navy disabled:opacity-60">
             {busy ? "Generating…" : "Download PDF"}
           </button>

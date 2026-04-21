@@ -220,6 +220,9 @@ export const SignedClinicMemoForm = () => {
           <Field label="Pricing">
             <PriceTable rows={data.priceRows} onChange={(rows) => set("priceRows", rows)} />
           </Field>
+          <div className="text-[11px] text-muted-foreground mt-2 mb-2">
+            Prices listed are inclusive of all fees and service charges.
+          </div>
 
           <Field label="Additional Notes or Context Regarding Pricing">
             <Textarea
@@ -307,19 +310,19 @@ export const SignedClinicMemoForm = () => {
             />
           </Field>
 
-          <div className="text-[11px] text-muted-foreground mt-2">
-            Prices listed are inclusive of all fees and service charges.
-          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 px-9 py-5 border-t border-border print-hide">
           <div className="text-xs text-muted-foreground">
             On signing: an Envelope ID is assigned, the PDF is hashed (SHA-256), your IP address &amp; user
-            agent are captured, and a Certificate of Completion is generated.
+            agent are captured, a Certificate of Completion is generated, and recipient email is used if provided.
           </div>
-          <button type="button" onClick={handleSign} disabled={busy} className="btn-base btn-navy disabled:opacity-60">
-            {busy ? "Sealing…" : "Sign & Seal Document"}
-          </button>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => window.print()} className="btn btn-secondary">Print</button>
+            <button type="button" onClick={handleSign} disabled={busy} className="btn-base btn-navy disabled:opacity-60">
+              {busy ? "Sealing…" : "Sign & Seal Document"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
