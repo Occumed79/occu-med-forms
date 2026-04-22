@@ -86,15 +86,6 @@ export const NetworkMemoForm = () => {
     localStorage.setItem(EMAIL_SETTINGS_KEY, JSON.stringify(emailSettings));
   }, [emailSettings]);
 
-  const emailConfigured = useMemo(
-    () => Boolean(emailSettings.publicKey && emailSettings.serviceId && emailSettings.templateId),
-    [emailSettings],
-  );
-
-  useEffect(() => {
-    localStorage.setItem(EMAIL_SETTINGS_KEY, JSON.stringify(emailSettings));
-  }, [emailSettings]);
-
   const handleDownload = async () => {
     setBusy(true);
     try {
