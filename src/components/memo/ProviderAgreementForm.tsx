@@ -20,7 +20,7 @@ const initial: ClinicMemoData = {
   directorName: "",
   dateOfMemo: "",
   dateOfPricingReceived: "",
-  billingTerms: "",
+  billingTerms: "Net 30",
   sourceOfPricing: "",
   clinicRepName: "",
   methodOfComm: "",
@@ -46,6 +46,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
   const [busy, setBusy] = useState(false);
   const [includeOccuContactAttachment, setIncludeOccuContactAttachment] = useState(false);
   const [includeProviderContactAttachment, setIncludeProviderContactAttachment] = useState(false);
+  const [occuMedRepRole, setOccuMedRepRole] = useState("Network Management Analyst");
   const [signatureName, setSignatureName] = useState("");
   const [signatureTitle, setSignatureTitle] = useState("");
   const [signatureDate, setSignatureDate] = useState("");
@@ -72,20 +73,37 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
     set("priceRows", [...data.priceRows, row]);
   };
 
+  const buildFinalPdf = async () => {
+    const baseBytes = await generateClinicPdf({ ...data, billingTerms: "Net 30" }, pdfOptions);
+    const attachmentPages: { title: string; fields: Array<{ label: string; value: string }> }[] = [];
+
+    if (includeOccuContactAttachment) attachmentPages.push(occuMedContactSheetAttachment());
+    if (includeProviderContactAttachment) attachmentPages.push(providerContactSheetAttachment());
+
+    return appendAttachmentPages(baseBytes, attachmentPages);
+  };
+
   const handleDownload = async () => {
     setBusy(true);
     try {
-      const baseBytes = await generateClinicPdf(data, pdfOptions);
-      const attachmentPages: { title: string; fields: Array<{ label: string; value: string }> }[] = [];
-
-      if (includeOccuContactAttachment) attachmentPages.push(occuMedContactSheetAttachment());
-      if (includeProviderContactAttachment) attachmentPages.push(providerContactSheetAttachment());
-
-      const finalBytes = await appendAttachmentPages(baseBytes, attachmentPages);
+      const finalBytes = await buildFinalPdf();
       downloadPdf(finalBytes, `provider-service-agreement-${data.dateOfMemo || Date.now()}.pdf`);
-      toast({ title: "PDF downloaded", description: "Provider service agreement saved." });
+      toast({ title: "Downloaded", description: "Provider service agreement downloaded." });
     } catch (e) {
-      toast({ title: "Failed to generate PDF", description: String(e), variant: "destructive" });
+      toast({ title: "Download failed", description: String(e), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSignAndSeal = async () => {
+    setBusy(true);
+    try {
+      const finalBytes = await buildFinalPdf();
+      downloadPdf(finalBytes, `provider-service-agreement-sealed-${data.dateOfMemo || Date.now()}.pdf`);
+      toast({ title: "Signed & sealed", description: "Provider service agreement sealed and downloaded." });
+    } catch (e) {
+      toast({ title: "Sign & seal failed", description: String(e), variant: "destructive" });
     } finally {
       setBusy(false);
     }
@@ -98,11 +116,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
     }
     setBusy(true);
     try {
-      const baseBytes = await generateClinicPdf(data, pdfOptions);
-      const attachmentPages: { title: string; fields: Array<{ label: string; value: string }> }[] = [];
-      if (includeOccuContactAttachment) attachmentPages.push(occuMedContactSheetAttachment());
-      if (includeProviderContactAttachment) attachmentPages.push(providerContactSheetAttachment());
-      const finalBytes = await appendAttachmentPages(baseBytes, attachmentPages);
+      const finalBytes = await buildFinalPdf();
       const subject = `Provider Service Agreement${data.dateOfMemo ? ` - ${data.dateOfMemo}` : ""}`;
       await apiSendMemoPdf({
         recipientEmail,
@@ -179,15 +193,6 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
               </Field>
             </>
           )}
-
-          <Field label="Billing Terms" required>
-            <Select value={data.billingTerms} onChange={(e) => set("billingTerms", e.target.value)}>
-              <option value="" disabled></option>
-              <option>Net 30</option>
-              <option>Net 15</option>
-              <option>Payment at Time of Service</option>
-            </Select>
-          </Field>
 
           <Row>
             <Field label="New or Existing Provider" required>
@@ -269,9 +274,10 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-2">
-                <Select value={data.directorName ? "Director of Network Management" : "Network Management Analyst"} onChange={() => undefined}>
+                <Select value={occuMedRepRole} onChange={(e) => setOccuMedRepRole(e.target.value)}>
                   <option>Network Management Analyst</option>
                   <option>Director of Network Management</option>
+                  <option>Controller</option>
                 </Select>
                 <TextInput placeholder="Full name" value={data.analystName} onChange={(e) => set("analystName", e.target.value)} />
                 <TextInput type="date" value={data.dateOfMemo} onChange={(e) => set("dateOfMemo", e.target.value)} />
@@ -297,17 +303,20 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
               </div>
             </div>
           </div>
-          <Field label="Send To (Recipient Email)">
+          <Field label="Recipient Email">
             <TextInput type="email" placeholder="recipient@example.com" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} />
           </Field>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 px-9 py-5 border-t border-border print-hide">
-          <button type="button" onClick={handleSend} disabled={busy} className="btn btn-secondary disabled:opacity-60">
-            {busy ? "Generating…" : "Send Memo"}
+          <button type="button" onClick={handleSignAndSeal} disabled={busy} className="btn-base btn-navy disabled:opacity-60">
+            {busy ? "Sealing…" : "Sign & Seal Document"}
           </button>
-          <button type="button" onClick={handleDownload} disabled={busy} className="btn-base btn-navy disabled:opacity-60">
-            {busy ? "Generating…" : "Download PDF"}
+          <button type="button" onClick={handleSend} disabled={busy} className="btn btn-secondary disabled:opacity-60">
+            Send
+          </button>
+          <button type="button" onClick={handleDownload} disabled={busy} className="btn btn-secondary disabled:opacity-60">
+            Download
           </button>
         </div>
       </div>
