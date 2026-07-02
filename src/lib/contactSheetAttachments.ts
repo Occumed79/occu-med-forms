@@ -27,16 +27,24 @@ export const occuMedContactSheetAttachment = (): AttachmentPage => ({
 });
 
 export const providerContactSheetAttachment = (): AttachmentPage => ({
-  title: "Provider Contact Sheet",
+  title: "Provider Contact Information",
   fields: [
     { label: "Clinic Name", value: "" },
     { label: "Address", value: "" },
     { label: "City, State Zip", value: "" },
     { label: "Telephone", value: "" },
     { label: "Fax", value: "" },
-    { label: "Schedule - Name/Title", value: "" },
-    { label: "Schedule - Preferred Method", value: "" },
-    { label: "Schedule - Phone", value: "" },
-    { label: "Schedule - Email", value: "" },
+    { label: "Monday", value: "" },
+    { label: "Tuesday", value: "" },
+    { label: "Wednesday", value: "" },
+    { label: "Thursday", value: "" },
+    { label: "Friday", value: "" },
+    { label: "Saturday", value: "" },
+    { label: "Sunday", value: "" },
+    { label: "Schedule Contact - Name | Title | Telephone | Email | Preferred Method", value: "" },
+    { label: "Exam Results - Name | Title | Telephone | Email", value: "" },
+    { label: "Billing - Name | Title | Telephone | Email", value: "" },
+    { label: "Manager / Supervisor - Name | Title | Telephone | Email", value: "" },
+    { label: "Corporate - Name | Title | Telephone | Email", value: "" },
   ],
 });
