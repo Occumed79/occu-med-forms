@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavyHeader } from "./Headers";
 import { Field, Row, TextInput } from "./FormAtoms";
 import { downloadPdf, generateContactSheetPdf } from "@/lib/pdf";
+import { generateProviderContactSheetPdf } from "@/lib/providerContactSheetPdf";
 import { occuMedContactSheetAttachment, providerContactSheetAttachment } from "@/lib/contactSheetAttachments";
 import { useToast } from "@/hooks/use-toast";
 
@@ -43,7 +44,9 @@ export const ContactSheetForm = ({ kind }: Props) => {
   const handleDownload = async () => {
     setBusy(true);
     try {
-      const bytes = await generateContactSheetPdf(title, fields);
+      const bytes = kind === "provider"
+        ? await generateProviderContactSheetPdf(title, fields)
+        : await generateContactSheetPdf(title, fields);
       downloadPdf(bytes, `${kind}-contact-sheet-${Date.now()}.pdf`);
       toast({ title: "PDF downloaded", description: `${title} exported.` });
     } catch (e) {
