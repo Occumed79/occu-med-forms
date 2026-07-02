@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { NavyHeader } from "./Headers";
-import { Field, Row, TextInput, Textarea } from "./FormAtoms";
+import { Field, Row, TextInput } from "./FormAtoms";
 import { downloadPdf, generateContactSheetPdf } from "@/lib/pdf";
 import { useToast } from "@/hooks/use-toast";
 
 interface Props {
   kind: "occu" | "provider";
 }
+
+const contactLine = (contact: { nameTitle: string; phone: string; email: string }) =>
+  [contact.nameTitle, contact.phone, contact.email].filter(Boolean).join(" | ");
 
 export const ContactSheetForm = ({ kind }: Props) => {
   const [busy, setBusy] = useState(false);
@@ -16,13 +19,14 @@ export const ContactSheetForm = ({ kind }: Props) => {
     companyName: "Occu-Med, LTD",
     address: "2121 W Bullard Ave",
     cityStateZip: "Fresno, CA 93711",
+    country: "United States of America",
     telephone: "(559) 435-2800",
     fax: "(800) 262-2863",
-    mon: "7:00am to 5:00pm PST",
-    tue: "7:00am to 5:00pm PST",
-    wed: "7:00am to 5:00pm PST",
-    thu: "7:00am to 5:00pm PST",
-    fri: "7:00am to 5:00pm PST",
+    mon: "7:30am to 4:30pm PST",
+    tue: "7:30am to 4:30pm PST",
+    wed: "7:30am to 4:30pm PST",
+    thu: "7:30am to 4:30pm PST",
+    fri: "7:30am to 4:30pm PST",
     sat: "CLOSED",
     sun: "CLOSED",
     contacts: [
@@ -31,6 +35,7 @@ export const ContactSheetForm = ({ kind }: Props) => {
       { role: "EXAMQA", nameTitle: "Dana Tamayo | Director", phone: "x159", email: "dtamayo@occu-med.com" },
       { role: "Communications", nameTitle: "", phone: "x172", email: "communicationsmanager@occu-med.com" },
       { role: "Scheduling", nameTitle: "Liz Mathies | Director", phone: "x151", email: "elizabeth.mathies@occu-med.com" },
+      { role: "Operations", nameTitle: "Chase Coyle | Director", phone: "x102", email: "ccoyle@occu-med.com" },
       { role: "Finance", nameTitle: "Alyson Tillery | Director", phone: "x116", email: "atillery@occu-med.com" },
     ],
   });
@@ -65,14 +70,17 @@ export const ContactSheetForm = ({ kind }: Props) => {
             { label: "Company Name", value: occu.companyName },
             { label: "Address", value: occu.address },
             { label: "City, State Zip", value: occu.cityStateZip },
+            { label: "Country", value: occu.country },
             { label: "Telephone", value: occu.telephone },
             { label: "Fax", value: occu.fax },
-            { label: "Hours", value: `Mon ${occu.mon} | Tue ${occu.tue} | Wed ${occu.wed} | Thu ${occu.thu} | Fri ${occu.fri} | Sat ${occu.sat} | Sun ${occu.sun}` },
-            ...occu.contacts.flatMap((c) => ([
-              { label: `${c.role} - Name/Title`, value: c.nameTitle },
-              { label: `${c.role} - Phone`, value: c.phone },
-              { label: `${c.role} - Email`, value: c.email },
-            ])),
+            { label: "Monday", value: occu.mon },
+            { label: "Tuesday", value: occu.tue },
+            { label: "Wednesday", value: occu.wed },
+            { label: "Thursday", value: occu.thu },
+            { label: "Friday", value: occu.fri },
+            { label: "Saturday", value: occu.sat },
+            { label: "Sunday", value: occu.sun },
+            ...occu.contacts.map((c) => ({ label: `${c.role} - Name | Title | Telephone | Email`, value: contactLine(c) })),
           ]
         : [
             { label: "Clinic Name", value: provider.clinicName },
@@ -122,12 +130,13 @@ export const ContactSheetForm = ({ kind }: Props) => {
               </Row>
               <Row>
                 <Field label="City, State Zip" required><TextInput value={occu.cityStateZip} onChange={(e) => setOccu((s) => ({ ...s, cityStateZip: e.target.value }))} /></Field>
-                <Field label="Telephone"><TextInput value={occu.telephone} onChange={(e) => setOccu((s) => ({ ...s, telephone: e.target.value }))} /></Field>
+                <Field label="Country"><TextInput value={occu.country} onChange={(e) => setOccu((s) => ({ ...s, country: e.target.value }))} /></Field>
               </Row>
               <Row>
+                <Field label="Telephone"><TextInput value={occu.telephone} onChange={(e) => setOccu((s) => ({ ...s, telephone: e.target.value }))} /></Field>
                 <Field label="Fax"><TextInput value={occu.fax} onChange={(e) => setOccu((s) => ({ ...s, fax: e.target.value }))} /></Field>
-                <Field label="Hours of Operation Summary"><TextInput value={`${occu.mon} (Mon-Fri), ${occu.sat} (Sat), ${occu.sun} (Sun)`} readOnly /></Field>
               </Row>
+              <Field label="Hours of Operation Summary"><TextInput value={`${occu.mon} (Mon-Fri), ${occu.sat} (Sat), ${occu.sun} (Sun)`} readOnly /></Field>
               <hr className="section-divider" />
               {occu.contacts.map((c, i) => (
                 <Row key={`${c.role}-${i}`}>

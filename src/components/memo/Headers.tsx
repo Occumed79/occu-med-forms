@@ -4,15 +4,22 @@ interface Props {
   title: string;
 }
 
-const HeaderTitle = ({ title }: Props) => (
-  <div className="header-title">
-    {title.split("\n").map((line, index) => (
-      <span key={`${line}-${index}`} className="block">
-        {line}
-      </span>
-    ))}
-  </div>
-);
+const HeaderTitle = ({ title }: Props) => {
+  const isContactInformation = title.includes("Contact Information");
+
+  return (
+    <div
+      className="header-title"
+      style={isContactInformation ? { fontSize: "34px" } : undefined}
+    >
+      {title.split("\n").map((line, index) => (
+        <span key={`${line}-${index}`} className="block">
+          {line}
+        </span>
+      ))}
+    </div>
+  );
+};
 
 export const AuroraHeader = ({ title }: Props) => (
   <div className="aurora-header">
