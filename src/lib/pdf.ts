@@ -466,6 +466,110 @@ export function downloadPdf(bytes: Uint8Array | ArrayBuffer, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+const isOccuMedContactInformation = (title: string) => title === "Occu-Med Contact Information";
+
+const findField = (fields: Array<{ label: string; value: string }>, label: string) =>
+  fields.find((field) => field.label === label)?.value || "";
+
+async function generateOccuMedContactInformationPdf(
+  title: string,
+  fields: Array<{ label: string; value: string }>,
+): Promise<Uint8Array> {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const logoData = await loadLogoDataUrl();
+
+  try {
+    doc.addImage(logoData, "PNG", 34, 18, 34, 20);
+  } catch {}
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("times", "bold");
+  doc.setFontSize(16);
+  doc.text(title, pageW / 2, 38, { align: "center" });
+
+  const drawLineField = (
+    label: string,
+    value: string,
+    y: number,
+    lineX = 67,
+    lineW = 112,
+    labelX = 36,
+    valueX = lineX + 10,
+  ) => {
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    doc.text(`${label}:`, labelX, y);
+    doc.setDrawColor(90, 90, 90);
+    doc.setLineWidth(0.25);
+    doc.line(lineX, y + 1.2, lineX + lineW, y + 1.2);
+    doc.text(value || "", valueX, y);
+  };
+
+  let y = 52;
+  drawLineField("Company Name", findField(fields, "Company Name"), y);
+  y += 8;
+  drawLineField("Address", findField(fields, "Address"), y, 56, 123, 36, 76);
+  y += 8;
+  drawLineField("City, State Zip", findField(fields, "City, State Zip"), y, 64, 115, 36, 76);
+  y += 8;
+  drawLineField("Country", findField(fields, "Country"), y, 55, 124, 36, 76);
+  y += 8;
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(10);
+  doc.text("Telephone:", 36, y);
+  doc.line(55, y + 1.2, 105, y + 1.2);
+  doc.text(findField(fields, "Telephone"), 70, y);
+  doc.text("Fax:", 124, y);
+  doc.line(135, y + 1.2, 179, y + 1.2);
+  doc.text(findField(fields, "Fax"), 147, y);
+
+  y += 10;
+  doc.text("Hours of Operation:", 36, y);
+  y += 9;
+  ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].forEach((day) => {
+    drawLineField(day, findField(fields, day), y, 55, 124, 36, 76);
+    y += 6.8;
+  });
+
+  y += 7;
+  doc.text("The following are pertinent points of contact:", 36, y);
+  y += 10;
+
+  const roles = [
+    "Network Management",
+    "Provider Relations",
+    "EXAMQA",
+    "Communications",
+    "Scheduling",
+    "Operations",
+    "Finance",
+  ];
+
+  roles.forEach((role) => {
+    const value = findField(fields, `${role} - Name | Title | Telephone | Email`);
+    doc.setFont("times", "bold");
+    doc.setFontSize(10.5);
+    doc.text(role, 36, y);
+    y += 6.8;
+
+    doc.setFont("times", "normal");
+    doc.setFontSize(8.2);
+    doc.text("Name | Title | Telephone | Email:", 36, y);
+    doc.line(82, y + 1.1, 179, y + 1.1);
+    doc.text(value || "", 84, y, { maxWidth: 94 });
+    y += 12;
+  });
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(10);
+  doc.text("Page 1 of 1", pageW - 34, pageH - 14);
+
+  return new Uint8Array(doc.output("arraybuffer") as ArrayBuffer);
+}
+
 export async function appendAttachmentPages(
   basePdfBytes: Uint8Array,
   pages: { title: string; fields: Array<{ label: string; value: string }> }[],
@@ -476,6 +580,14 @@ export async function appendAttachmentPages(
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   for (const pageData of pages) {
+    if (isOccuMedContactInformation(pageData.title)) {
+      const contactBytes = await generateContactSheetPdf(pageData.title, pageData.fields);
+      const contactDoc = await PDFDocument.load(contactBytes);
+      const copiedPages = await pdfDoc.copyPages(contactDoc, contactDoc.getPageIndices());
+      copiedPages.forEach((page) => pdfDoc.addPage(page));
+      continue;
+    }
+
     const page = pdfDoc.addPage([595, 842]); // A4 points
     let y = 790;
     page.drawText(pageData.title, { x: 40, y, size: 18, font: bold });
@@ -495,6 +607,10 @@ export async function generateContactSheetPdf(
   title: string,
   fields: Array<{ label: string; value: string }>,
 ): Promise<Uint8Array> {
+  if (isOccuMedContactInformation(title)) {
+    return generateOccuMedContactInformationPdf(title, fields);
+  }
+
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595, 842]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
