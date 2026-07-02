@@ -27,7 +27,7 @@ const initial: SignedClinicMemoData = {
   directorName: "",
   dateOfMemo: "",
   dateOfPricingReceived: "",
-  billingTerms: "",
+  billingTerms: "Net 30",
   sourceOfPricing: "",
   clinicRepName: "",
   methodOfComm: "",
@@ -61,7 +61,6 @@ export const SignedClinicMemoForm = () => {
   const [backendWarning, setBackendWarning] = useState<string>("");
   const { toast } = useToast();
 
-  // Create authoritative envelope + viewed log on mount.
   useEffect(() => {
     (async () => {
       try {
@@ -88,15 +87,12 @@ export const SignedClinicMemoForm = () => {
   };
 
   const withAttachments = async (pdfBytes: Uint8Array) => {
-    const attachmentPages = [];
+    const attachmentPages: { title: string; fields: Array<{ label: string; value: string }> }[] = [];
     if (includeOccuContactAttachment) attachmentPages.push(occuMedContactSheetAttachment());
     if (includeProviderContactAttachment) attachmentPages.push(providerContactSheetAttachment());
     return attachmentPages.length ? await appendAttachmentPages(pdfBytes, attachmentPages) : pdfBytes;
   };
 
-  // Fallback used when the signed-envelope backend is unavailable. Generates the
-  // signed PDF + certificate entirely client-side so the user can still download
-  // their documents. These are clearly flagged as unverified (no server audit).
   const signLocally = async (finalData: SignedClinicMemoData) => {
     const localEnvelopeId = envelopeId || `OM-LOCAL-${Date.now()}`;
     const basePdf = await generateSignedClinicPdf(finalData, localEnvelopeId);
@@ -120,18 +116,18 @@ export const SignedClinicMemoForm = () => {
     );
     toast({
       title: "Saved local copy",
-      description: `Local document ${localEnvelopeId} downloaded. This copy is unverified \u2014 the backend recorded no envelope or audit trail.`,
+      description: `Local document ${localEnvelopeId} downloaded. This copy is unverified — the backend recorded no envelope or audit trail.`,
     });
   };
 
-  const handleSign = async () => {
+  const validateForSignature = () => {
     if (!data.agreedElectronic) {
       toast({
-        title: "Agreement required",
-        description: "Please agree to do business electronically before signing.",
+        title: "Consent required",
+        description: "Please authorize electronic signatures and records before signing.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
     if (!data.clinicRepFullName.trim() || !data.occuMedRepName.trim()) {
       toast({
@@ -139,12 +135,18 @@ export const SignedClinicMemoForm = () => {
         description: "Both Occu-Med and Clinic representative names are required.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleSign = async () => {
+    if (!validateForSignature()) return;
 
     setBusy(true);
     const finalData: SignedClinicMemoData = {
       ...data,
+      billingTerms: "Net 30",
       occuMedRepDate: data.occuMedRepDate || new Date().toISOString().slice(0, 10),
       clinicRepDate: data.clinicRepDate || new Date().toISOString().slice(0, 10),
     };
@@ -174,8 +176,6 @@ export const SignedClinicMemoForm = () => {
         description: `Envelope ${finalized.envelopeId} finalized. Hash ${finalized.pdfHash.slice(0, 16)}…`,
       });
     } catch (e) {
-      // Backend/env unavailable: degrade gracefully to a local, unverified copy
-      // instead of failing the whole signing workflow.
       console.warn("Signed envelope backend failed; generating local copy", e);
       try {
         await signLocally(finalData);
@@ -187,12 +187,35 @@ export const SignedClinicMemoForm = () => {
     }
   };
 
+  const handleSend = async () => {
+    if (!recipientEmail.trim()) {
+      toast({ title: "Recipient email required", description: "Enter an email address before sending.", variant: "destructive" });
+      return;
+    }
+    await handleSign();
+  };
+
+  const handleDownload = async () => {
+    setBusy(true);
+    try {
+      const draftEnvelopeId = envelopeId || `OM-DRAFT-${Date.now()}`;
+      const basePdf = await generateSignedClinicPdf({ ...data, billingTerms: "Net 30" }, draftEnvelopeId);
+      const finalPdfBytes = await withAttachments(basePdf);
+      downloadPdf(finalPdfBytes, `${draftEnvelopeId}-draft.pdf`);
+      toast({ title: "Downloaded", description: "Document downloaded." });
+    } catch (e) {
+      toast({ title: "Download failed", description: String(e), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="theme-navy flex flex-col md:flex-row gap-6 max-w-[1200px] mx-auto items-start">
       <ComponentSidebar onAdd={(c) => addComponent(c.name)} />
 
       <div className="form-card flex-1" style={{ maxWidth: "none" }}>
-        <NavyHeader title="Network Management Provider Pricing Sheet" />
+        <NavyHeader title="Occu-Med, LTD\nProvider Service Agreement" />
         <div className="form-body">
           {backendWarning && (
             <div
@@ -202,14 +225,6 @@ export const SignedClinicMemoForm = () => {
               {backendWarning}
             </div>
           )}
-          <Row>
-            <Field label="Network Management Analyst Name" required>
-              <TextInput placeholder="Full name" value={data.analystName} onChange={(e) => set("analystName", e.target.value)} />
-            </Field>
-            <Field label="Director of Network Management">
-              <TextInput placeholder="Full name" value={data.directorName} onChange={(e) => set("directorName", e.target.value)} />
-            </Field>
-          </Row>
 
           <Row>
             <Field label="Pricing Established" required>
@@ -219,30 +234,6 @@ export const SignedClinicMemoForm = () => {
               <TextInput type="date" value={data.dateOfPricingReceived} onChange={(e) => set("dateOfPricingReceived", e.target.value)} />
             </Field>
           </Row>
-
-          <Row>
-            <Field label="Source of Pricing" required>
-              <TextInput placeholder="e.g. Email, Phone, Portal" value={data.sourceOfPricing} onChange={(e) => set("sourceOfPricing", e.target.value)} />
-            </Field>
-            <Field label="Clinic Representative Name">
-              <TextInput placeholder="Contact name" value={data.clinicRepName} onChange={(e) => set("clinicRepName", e.target.value)} />
-            </Field>
-          </Row>
-
-          <Field label="Method of Communication" required>
-            <TextInput placeholder="e.g. Email, Phone, Fax" value={data.methodOfComm} onChange={(e) => set("methodOfComm", e.target.value)} />
-          </Field>
-
-          <Field label="Billing Terms" required>
-            <Select value={data.billingTerms} onChange={(e) => set("billingTerms", e.target.value)}>
-              <option value="" disabled></option>
-              <option>Net 30</option>
-              <option>Net 15</option>
-              <option>Payment at Time of Service</option>
-            </Select>
-          </Field>
-
-          <hr className="section-divider" />
 
           <Row>
             <Field label="New or Existing Provider" required>
@@ -261,10 +252,6 @@ export const SignedClinicMemoForm = () => {
             </Field>
           </Row>
 
-          <Field label="Provider Address" required>
-            <AddressBlock value={data.address} onChange={(a) => set("address", a)} />
-          </Field>
-
           <Row>
             <Field label="Provider Specialty / Practice">
               <Select value={data.providerSpecialty} onChange={(e) => set("providerSpecialty", e.target.value)}>
@@ -280,7 +267,9 @@ export const SignedClinicMemoForm = () => {
             </Field>
           </Row>
 
-          <hr className="section-divider" />
+          <Field label="Provider Address" required>
+            <AddressBlock value={data.address} onChange={(a) => set("address", a)} />
+          </Field>
 
           <Field label="Pricing">
             <PriceTable rows={data.priceRows} onChange={(rows) => set("priceRows", rows)} />
@@ -296,6 +285,7 @@ export const SignedClinicMemoForm = () => {
               onChange={(e) => set("notes", e.target.value)}
             />
           </Field>
+
           <hr className="section-divider" />
           <label className="flex items-center gap-2 text-sm mt-1 mb-2">
             <input type="checkbox" checked={includeOccuContactAttachment} onChange={(e) => setIncludeOccuContactAttachment(e.target.checked)} />
@@ -307,20 +297,16 @@ export const SignedClinicMemoForm = () => {
           </label>
 
           <hr className="section-divider" />
-
-          {/* Signatures */}
           <h3 className="text-base font-semibold text-[hsl(var(--label))] mb-3">Signatures</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Occu-Med rep */}
             <div className="border border-border rounded-md p-4 bg-background">
               <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2">
                 Occu-Med Representative
               </div>
               <div className="flex items-center gap-3 mb-3 p-3 rounded bg-[hsl(var(--navy-deep))] text-white">
-                {/* Stylized fingerprint pattern */}
                 <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  {[3,5,7,9,11,13,15,17].map((r) => (
+                  {[3, 5, 7, 9, 11, 13, 15, 17].map((r) => (
                     <circle key={r} cx="22" cy="22" r={r} fill="none" />
                   ))}
                 </svg>
@@ -340,7 +326,6 @@ export const SignedClinicMemoForm = () => {
               </div>
             </div>
 
-            {/* Clinic rep */}
             <div className="border border-border rounded-md p-4 bg-background">
               <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2">
                 Clinic Representative / Provider
@@ -370,12 +355,12 @@ export const SignedClinicMemoForm = () => {
               className="mt-1 h-4 w-4 accent-[hsl(var(--navy-orb-1))]"
             />
             <span>
-              I agree to do business electronically with Occu-Med and consent to the use of electronic
-              signatures and records for this transaction.
+              I consent to receive, review, sign, and retain this transaction electronically, and I authorize
+              the use of electronic signatures and electronic records in place of paper documents.
             </span>
           </label>
 
-          <Field label="Optional recipient email (server-side send)">
+          <Field label="Recipient Email">
             <TextInput
               type="email"
               placeholder="recipient@example.com"
@@ -383,20 +368,18 @@ export const SignedClinicMemoForm = () => {
               onChange={(e) => setRecipientEmail(e.target.value)}
             />
           </Field>
-
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 px-9 py-5 border-t border-border print-hide">
-          <div className="text-xs text-muted-foreground">
-            On signing: an Envelope ID is assigned, the PDF is hashed (SHA-256), your IP address &amp; user
-            agent are captured, a Certificate of Completion is generated, and recipient email is used if provided.
-          </div>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => window.print()} className="btn btn-secondary">Print</button>
-            <button type="button" onClick={handleSign} disabled={busy} className="btn-base btn-navy disabled:opacity-60">
-              {busy ? "Sealing…" : "Sign & Seal Document"}
-            </button>
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 px-9 py-5 border-t border-border print-hide">
+          <button type="button" onClick={handleSign} disabled={busy} className="btn-base btn-navy disabled:opacity-60">
+            {busy ? "Sealing…" : "Sign & Seal Document"}
+          </button>
+          <button type="button" onClick={handleSend} disabled={busy} className="btn btn-secondary disabled:opacity-60">
+            Send
+          </button>
+          <button type="button" onClick={handleDownload} disabled={busy} className="btn btn-secondary disabled:opacity-60">
+            Download
+          </button>
         </div>
       </div>
     </div>
