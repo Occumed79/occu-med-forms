@@ -52,6 +52,18 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const { toast } = useToast();
 
+  const headerTitle = includeTermsBlock
+    ? "Occu-Med, LTD\nProvider Service Agreement"
+    : "Provider Service Agreement";
+
+  const pdfOptions = includeTermsBlock
+    ? {
+        title: "Occu-Med, LTD\nProvider Service Agreement",
+        omitInternalInfo: true,
+        omitPricingSource: true,
+      }
+    : undefined;
+
   const set = <K extends keyof ClinicMemoData>(k: K, v: ClinicMemoData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
 
@@ -63,7 +75,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
   const handleDownload = async () => {
     setBusy(true);
     try {
-      const baseBytes = await generateClinicPdf(data);
+      const baseBytes = await generateClinicPdf(data, pdfOptions);
       const attachmentPages: { title: string; fields: Array<{ label: string; value: string }> }[] = [];
 
       if (includeOccuContactAttachment) attachmentPages.push(occuMedContactSheetAttachment());
@@ -86,7 +98,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
     }
     setBusy(true);
     try {
-      const baseBytes = await generateClinicPdf(data);
+      const baseBytes = await generateClinicPdf(data, pdfOptions);
       const attachmentPages: { title: string; fields: Array<{ label: string; value: string }> }[] = [];
       if (includeOccuContactAttachment) attachmentPages.push(occuMedContactSheetAttachment());
       if (includeProviderContactAttachment) attachmentPages.push(providerContactSheetAttachment());
@@ -95,7 +107,7 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
       await apiSendMemoPdf({
         recipientEmail,
         subject,
-        message: `Please see attached Provider Service Agreement.\n\nAnalyst: ${data.analystName || "N/A"}\nSigned by: ${signatureName || "N/A"}`,
+        message: `Please see attached Provider Service Agreement.\n\nSigned by: ${signatureName || "N/A"}`,
         filename: `provider-service-agreement-${data.dateOfMemo || Date.now()}.pdf`,
         pdfBase64: bytesToBase64(finalBytes),
       });
@@ -112,9 +124,9 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
       <ComponentSidebar onAdd={(c) => addComponent(c.name)} />
 
       <div className="form-card flex-1" style={{ maxWidth: "none" }}>
-        <NavyHeader title="Provider Service Agreement" />
+        <NavyHeader title={headerTitle} />
         <div className="form-body">
-            {includeTermsBlock && (
+          {includeTermsBlock && (
             <div className="rounded-lg border border-border bg-muted/30 p-4 mb-5 space-y-4">
               <div>
                 <h3 className="text-sm font-bold">Scheduling Process</h3>
@@ -131,14 +143,16 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
             </div>
           )}
 
-          <Row>
-            <Field label="Network Management Analyst Name" required>
-              <TextInput placeholder="Full name" value={data.analystName} onChange={(e) => set("analystName", e.target.value)} />
-            </Field>
-            <Field label="Director of Network Management">
-              <TextInput placeholder="Full name" value={data.directorName} onChange={(e) => set("directorName", e.target.value)} />
-            </Field>
-          </Row>
+          {!includeTermsBlock && (
+            <Row>
+              <Field label="Network Management Analyst Name" required>
+                <TextInput placeholder="Full name" value={data.analystName} onChange={(e) => set("analystName", e.target.value)} />
+              </Field>
+              <Field label="Director of Network Management">
+                <TextInput placeholder="Full name" value={data.directorName} onChange={(e) => set("directorName", e.target.value)} />
+              </Field>
+            </Row>
+          )}
 
           <Row>
             <Field label="Pricing Established" required>
@@ -149,18 +163,22 @@ export const ProviderAgreementForm = ({ includeTermsBlock }: Props) => {
             </Field>
           </Row>
 
-          <Row>
-            <Field label="Source of Pricing" required>
-              <TextInput placeholder="e.g. Email, Phone, Portal" value={data.sourceOfPricing} onChange={(e) => set("sourceOfPricing", e.target.value)} />
-            </Field>
-            <Field label="Clinic Representative Name">
-              <TextInput placeholder="Contact name" value={data.clinicRepName} onChange={(e) => set("clinicRepName", e.target.value)} />
-            </Field>
-          </Row>
+          {!includeTermsBlock && (
+            <>
+              <Row>
+                <Field label="Source of Pricing" required>
+                  <TextInput placeholder="e.g. Email, Phone, Portal" value={data.sourceOfPricing} onChange={(e) => set("sourceOfPricing", e.target.value)} />
+                </Field>
+                <Field label="Clinic Representative Name">
+                  <TextInput placeholder="Contact name" value={data.clinicRepName} onChange={(e) => set("clinicRepName", e.target.value)} />
+                </Field>
+              </Row>
 
-          <Field label="Method of Communication" required>
-            <TextInput placeholder="e.g. Email, Phone, Fax" value={data.methodOfComm} onChange={(e) => set("methodOfComm", e.target.value)} />
-          </Field>
+              <Field label="Method of Communication" required>
+                <TextInput placeholder="e.g. Email, Phone, Fax" value={data.methodOfComm} onChange={(e) => set("methodOfComm", e.target.value)} />
+              </Field>
+            </>
+          )}
 
           <Field label="Billing Terms" required>
             <Select value={data.billingTerms} onChange={(e) => set("billingTerms", e.target.value)}>
