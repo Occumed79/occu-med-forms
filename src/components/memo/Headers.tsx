@@ -8,7 +8,10 @@ const HeaderTitle = ({ title }: Props) => {
   const isContactInformation = title.includes("Contact Information");
 
   return (
-    <div className={`header-title ${isContactInformation ? "contact-sheet-header-title" : ""}`}>
+    <div
+      className="header-title"
+      style={isContactInformation ? { fontSize: "34px" } : undefined}
+    >
       {title.split("\n").map((line, index) => (
         <span key={`${line}-${index}`} className="block">
           {line}
