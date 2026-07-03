@@ -72,7 +72,7 @@ export const SignedClinicMemoForm = () => {
       } catch (e) {
         console.warn("Backend envelope bootstrap failed", e);
         setBackendWarning(
-          "The signed-envelope service is currently unavailable. You can still complete and download an unverified local PDF + certificate, but no authoritative envelope or audit trail will be recorded until the backend (VITE_API_BASE_URL) and Supabase are configured.",
+          "The signed-envelope service is currently unavailable. You can still complete and download an unverified local PDF + certificate, but no authoritative envelope or audit trail will be recorded until the backend (VITE_API_BASE_URL) and Neon database are configured.",
         );
       }
     })();
