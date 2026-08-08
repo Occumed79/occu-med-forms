@@ -1,3 +1,5 @@
+import type { ProviderDocumentData, ProviderDocumentType, ProviderInvitation } from "@/types/memo";
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 function url(path: string) {
@@ -18,7 +20,7 @@ export async function apiLogView(envelopeId: string) {
 
 export async function apiFinalizeEnvelope(
   envelopeId: string,
-  payload: { data: unknown; viewedAt?: string; recipientEmail?: string },
+  payload: { data: unknown; viewedAt?: string; recipientEmail?: string; signedPdfBase64?: string },
 ) {
   const res = await fetch(url(`/api/signed/envelopes/${envelopeId}/finalize`), {
     method: "POST",
@@ -56,4 +58,50 @@ export async function apiSendMemoPdf(payload: {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{ ok: boolean }>;
+}
+
+export async function apiCreateProviderInvitation(payload: {
+  documentType: ProviderDocumentType;
+  data: ProviderDocumentData;
+  recipientEmail?: string;
+}) {
+  const res = await fetch(url("/api/provider-invitations"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<{
+    token: string;
+    providerPath: string;
+    createdAt: string;
+    expiresAt: string;
+    emailSent: boolean;
+  }>;
+}
+
+export async function apiGetProviderInvitation(token: string) {
+  const res = await fetch(url(`/api/provider-invitations/${encodeURIComponent(token)}`));
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<ProviderInvitation>;
+}
+
+export async function apiFinalizeProviderInvitation(
+  token: string,
+  payload: { data: ProviderDocumentData; signedPdfBase64: string },
+) {
+  const res = await fetch(url(`/api/provider-invitations/${encodeURIComponent(token)}/finalize`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<{
+    ok: boolean;
+    completedAt: string;
+    pdfHash: string;
+    pdfBase64: string;
+    certificateBase64: string;
+    emailSent: boolean;
+  }>;
 }

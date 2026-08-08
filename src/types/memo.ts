@@ -52,3 +52,39 @@ export interface SignedClinicMemoData extends ClinicMemoData {
   clinicRepDate: string;
   agreedElectronic: boolean;
 }
+
+export type ProviderDocumentType = "fee-proposal" | "service-agreement";
+
+export interface ProviderServiceRow extends PriceRow {
+  source: "occu-med" | "provider";
+}
+
+export interface ProviderDocumentData {
+  documentType: ProviderDocumentType;
+  documentNumber: string;
+  providerName: string;
+  providerContactName: string;
+  providerEmail: string;
+  providerPhone: string;
+  address: AddressData;
+  preparedBy: string;
+  preparedByTitle: string;
+  issuedDate: string;
+  expiresDate: string;
+  billingTerms: string;
+  services: ProviderServiceRow[];
+  notes: string;
+  providerSignerName: string;
+  providerSignerTitle: string;
+  providerSignedDate: string;
+  agreedElectronic: boolean;
+}
+
+export interface ProviderInvitation {
+  documentType: ProviderDocumentType;
+  status: "sent" | "viewed" | "completed" | "expired";
+  data: ProviderDocumentData;
+  createdAt: string;
+  expiresAt: string;
+  completedAt?: string;
+}

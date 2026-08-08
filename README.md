@@ -6,11 +6,22 @@ Production architecture for Occu-Med forms:
 - **Backend**: Render Node API service (`backend/server.mjs`)
 - **Persistence**: Neon PostgreSQL (server-side only, via `DATABASE_URL`)
 
-The app preserves all three user-facing forms and the floating switcher:
+The internal workspace provides these document tools through the floating switcher:
 
-1. Network Management
-2. Clinic Version
-3. Clinic Version (Signed / Security & Audit)
+1. Provider Fee Proposal (default)
+2. Network Management Pricing Memo
+3. Legacy Signed Pricing Sheet
+4. Provider Service Agreement
+5. Occu-Med and Provider Contact Sheets
+
+Provider Fee Proposals and Provider Service Agreements use a provider-invitation workflow:
+
+1. Occu-Med prepares the provider, service, fee, and term information.
+2. The app creates a cryptographically random, document-specific provider URL.
+3. The provider URL renders only the invited document—there is no internal form switcher.
+4. The provider can remove unavailable services, add requested services, enter fees, complete contact information, and sign electronically.
+5. The exact on-screen preview becomes the final PDF. The backend stores the completed bytes, SHA-256 hash, timestamps, client metadata, and audit certificate.
+6. When email is configured, the backend emails the invitation and returns the completed document to the configured Occu-Med mailbox, with a copy to the provider.
 
 ## Responsibility split
 
@@ -19,6 +30,8 @@ The app preserves all three user-facing forms and the floating switcher:
 - Collects and validates user input/signatures
 - Calls backend endpoints for signed envelope lifecycle
 - Downloads signed PDF + certificate returned by backend
+- Converts the visible memo/contact form or exact A4 provider preview into the PDF, eliminating separate screen/PDF layouts
+- Appends uploaded PDF/JPG/PNG files to Network Management memo packets
 
 ### Backend (authoritative signed workflow)
 - Creates authoritative Envelope IDs
@@ -37,6 +50,9 @@ The app preserves all three user-facing forms and the floating switcher:
 - `POST /api/signed/envelopes/:envelopeId/view` → viewed event
 - `POST /api/signed/envelopes/:envelopeId/finalize` → finalize + hash + cert + audit + optional email
 - `POST /api/memos/send` → email a memo PDF
+- `POST /api/provider-invitations` → create provider-only invitation
+- `GET /api/provider-invitations/:token` → load and log provider review
+- `POST /api/provider-invitations/:token/finalize` → validate, hash, store, certify, and return the completed PDF
 
 ## Neon setup
 
@@ -76,6 +92,8 @@ create table if not exists envelopes (
 );
 ```
 
+The backend also auto-creates `provider_invitations`. Invitation tokens are never stored directly; only their SHA-256 hashes are persisted. Invitations expire after 30 days by default and completed documents remain locked.
+
 ## Render deployment (exact)
 
 This repo includes `render.yaml` with **two services**.
@@ -88,13 +106,16 @@ This repo includes `render.yaml` with **two services**.
 
 Required backend env vars:
 - `DATABASE_URL` (Neon pooled connection string)
-- `FRONTEND_ORIGIN` (optional; default `*`)
+- `FRONTEND_ORIGIN` (the deployed frontend origin used for CORS)
+- `FRONTEND_APP_URL` (the deployed frontend URL used in provider invitation emails)
 - `NODE_ENV` (set to `production` on Render)
 - `ENVELOPE_PREFIX` (optional; default `OM`)
+- `INVITATION_TTL_DAYS` (optional; default `30`)
 
 Optional server-side email env vars:
 - `RESEND_API_KEY`
 - `MAIL_FROM`
+- `PROVIDER_RESPONSES_TO` (Occu-Med mailbox that receives completed provider documents)
 
 ### 2) Frontend service (`occu-med-frontend`)
 - Runtime: Static Site

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, ShieldCheck } from "lucide-react";
 
 export type FormVariant =
+  | "fee-proposal"
   | "network"
   | "clinic-signed"
   | "provider-agreement-terms"
@@ -31,9 +32,10 @@ export const FloatingFormSelector = ({ variant, onSelect }: Props) => {
   }, []);
 
   const options: { value: FormVariant; label: string; desc: string; icon: typeof FileText }[] = [
+    { value: "fee-proposal", label: "Provider Fee Proposal", desc: "Send Occu-Med's proposed services and fees for provider review", icon: FileText },
     { value: "network", label: "Network Management", desc: "Standard internal pricing memo", icon: FileText },
-    { value: "clinic-signed", label: "Provider Pricing Sheet (Signed)", desc: "With dual signatures, audit trail & certificate", icon: ShieldCheck },
-    { value: "provider-agreement-terms", label: "Provider Service Agreement + Terms", desc: "Agreement with Terms of Service block", icon: FileText },
+    { value: "clinic-signed", label: "Legacy Signed Pricing Sheet", desc: "Existing dual-signature audit workflow", icon: ShieldCheck },
+    { value: "provider-agreement-terms", label: "Provider Service Agreement", desc: "Send a provider-only agreement for completion", icon: FileText },
     { value: "occu-contact-sheet", label: "Occu-Med Contact Sheet", desc: "Standalone contact information sheet", icon: FileText },
     { value: "provider-contact-sheet", label: "Provider Contact Sheet", desc: "Standalone provider contact information", icon: FileText },
   ];

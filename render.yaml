@@ -11,6 +11,12 @@ services:
         sync: false
       - key: FRONTEND_ORIGIN
         sync: false
+      - key: FRONTEND_APP_URL
+        sync: false
+      - key: INVITATION_TTL_DAYS
+        value: "30"
+      - key: PROVIDER_RESPONSES_TO
+        sync: false
       - key: ENVELOPE_PREFIX
         value: "OM"
       - key: NODE_ENV

@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { NavyHeader } from "./Headers";
 import { Field, Row, TextInput, Select, Textarea } from "./FormAtoms";
 import { AddressBlock } from "./AddressBlock";
 import { PriceTable } from "./PriceTable";
 import { ComponentSidebar } from "./ComponentSidebar";
 import { FACILITY_TYPES, PROVIDER_SPECIALTIES } from "@/data/examComponents";
-import { appendAttachmentPages, downloadPdf, generateClinicPdf } from "@/lib/pdf";
+import { appendAttachmentPages, downloadPdf } from "@/lib/pdf";
+import { pdfBytesToBase64, screenFormPdf } from "@/lib/documentCapture";
 import { useToast } from "@/hooks/use-toast";
 import type { ClinicMemoData, PriceRow } from "@/types/memo";
 import { occuMedContactSheetAttachment, providerContactSheetAttachment } from "@/lib/contactSheetAttachments";
@@ -31,18 +32,13 @@ const initial: ClinicMemoData = {
 
 let _id = 0;
 const newId = () => `row-${Date.now()}-${++_id}`;
-const bytesToBase64 = (bytes: Uint8Array) => {
-  let binary = "";
-  bytes.forEach((b) => { binary += String.fromCharCode(b); });
-  return btoa(binary);
-};
-
 export const ClinicMemoForm = () => {
   const [data, setData] = useState<ClinicMemoData>(initial);
   const [busy, setBusy] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [includeOccuContactAttachment, setIncludeOccuContactAttachment] = useState(false);
   const [includeProviderContactAttachment, setIncludeProviderContactAttachment] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const set = <K extends keyof ClinicMemoData>(k: K, v: ClinicMemoData[K]) =>
@@ -60,7 +56,8 @@ export const ClinicMemoForm = () => {
     }
     setBusy(true);
     try {
-      const bytes = await generateClinicPdf(data);
+      if (!formRef.current) throw new Error("The form is not ready.");
+      const bytes = await screenFormPdf(formRef.current);
       const attachmentPages = [];
       if (includeOccuContactAttachment) attachmentPages.push(occuMedContactSheetAttachment());
       if (includeProviderContactAttachment) attachmentPages.push(providerContactSheetAttachment());
@@ -70,7 +67,7 @@ export const ClinicMemoForm = () => {
         subject: `Provider Pricing Sheet${data.dateOfMemo ? ` - ${data.dateOfMemo}` : ""}`,
         message: `Please see attached Provider Pricing Sheet.\n\nAnalyst: ${data.analystName || "N/A"}\nDate: ${data.dateOfMemo || "N/A"}`,
         filename: `clinic-memo-${data.dateOfMemo || Date.now()}.pdf`,
-        pdfBase64: bytesToBase64(finalBytes),
+        pdfBase64: pdfBytesToBase64(finalBytes),
       });
       toast({ title: "Email sent", description: "Memo sent through the server-side email integration." });
     } catch (e) {
@@ -83,7 +80,8 @@ export const ClinicMemoForm = () => {
   const handleDownload = async () => {
     setBusy(true);
     try {
-      const bytes = await generateClinicPdf(data);
+      if (!formRef.current) throw new Error("The form is not ready.");
+      const bytes = await screenFormPdf(formRef.current);
       const attachmentPages = [];
       if (includeOccuContactAttachment) attachmentPages.push(occuMedContactSheetAttachment());
       if (includeProviderContactAttachment) attachmentPages.push(providerContactSheetAttachment());
@@ -101,7 +99,7 @@ export const ClinicMemoForm = () => {
     <div className="theme-navy flex flex-col md:flex-row gap-6 max-w-[1200px] mx-auto items-start">
       <ComponentSidebar onAdd={(c) => addComponent(c.name)} />
 
-      <div className="form-card flex-1" style={{ maxWidth: "none" }}>
+      <div ref={formRef} className="form-card flex-1" style={{ maxWidth: "none" }}>
         <NavyHeader title="Network Management Provider Pricing Sheet" />
         <div className="form-body">
           <Row>
@@ -198,6 +196,7 @@ export const ClinicMemoForm = () => {
               onChange={(e) => set("notes", e.target.value)}
             />
           </Field>
+          <div className="pdf-exclude">
           <hr className="section-divider" />
           <label className="flex items-center gap-2 text-sm mt-1 mb-2">
             <input type="checkbox" checked={includeOccuContactAttachment} onChange={(e) => setIncludeOccuContactAttachment(e.target.checked)} />
@@ -210,6 +209,7 @@ export const ClinicMemoForm = () => {
           <Field label="Send To (Recipient Email)">
             <TextInput type="email" placeholder="recipient@example.com" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} />
           </Field>
+          </div>
 
         </div>
 

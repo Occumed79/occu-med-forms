@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AuroraHeader } from "./Headers";
 import { Field, Row, TextInput, Select, Textarea } from "./FormAtoms";
 import { AddressBlock } from "./AddressBlock";
 import { PriceTable } from "./PriceTable";
 import { ComponentSidebar } from "./ComponentSidebar";
-import { downloadPdf, generateNetworkPdf } from "@/lib/pdf";
+import { appendUploadedFiles, downloadPdf } from "@/lib/pdf";
+import { pdfBytesToBase64, screenFormPdf } from "@/lib/documentCapture";
 import { apiSendMemoPdf } from "@/lib/backend";
 import { useToast } from "@/hooks/use-toast";
 import { Paperclip } from "lucide-react";
@@ -42,19 +43,12 @@ const CLINIC_TYPES_GROUPED: { label: string; options: string[] }[] = [
   { label: "Other", options: ["Collection Site"] },
 ];
 
-const bytesToBase64 = (bytes: Uint8Array) => {
-  let binary = "";
-  bytes.forEach((b) => {
-    binary += String.fromCharCode(b);
-  });
-  return btoa(binary);
-};
-
 export const NetworkMemoForm = () => {
   const [data, setData] = useState<NetworkMemoData>(initial);
   const [busy, setBusy] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const formRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const set = <K extends keyof NetworkMemoData>(k: K, v: NetworkMemoData[K]) =>
@@ -65,9 +59,11 @@ export const NetworkMemoForm = () => {
   const handleDownload = async () => {
     setBusy(true);
     try {
-      const bytes = await generateNetworkPdf(data);
+      if (!formRef.current) throw new Error("The form is not ready.");
+      const formBytes = await screenFormPdf(formRef.current);
+      const bytes = await appendUploadedFiles(formBytes, uploadedFiles);
       downloadPdf(bytes, `network-memo-${data.dateOfMemo || Date.now()}.pdf`);
-      toast({ title: "PDF downloaded", description: "Network management memo saved." });
+      toast({ title: "PDF downloaded", description: "The PDF matches the completed form shown on screen." });
     } catch (e) {
       toast({ title: "Failed to generate PDF", description: String(e), variant: "destructive" });
     } finally {
@@ -83,8 +79,10 @@ export const NetworkMemoForm = () => {
 
     setBusy(true);
     try {
-      const bytes = await generateNetworkPdf(data);
-      const pdfBase64 = bytesToBase64(bytes);
+      if (!formRef.current) throw new Error("The form is not ready.");
+      const formBytes = await screenFormPdf(formRef.current);
+      const bytes = await appendUploadedFiles(formBytes, uploadedFiles);
+      const pdfBase64 = pdfBytesToBase64(bytes);
       const subject = `Network Management Pricing Memo${data.dateOfMemo ? ` - ${data.dateOfMemo}` : ""}`;
       await apiSendMemoPdf({
         recipientEmail,
@@ -110,7 +108,7 @@ export const NetworkMemoForm = () => {
     <>
       <div className="theme-navy flex flex-col md:flex-row gap-6 max-w-[1200px] mx-auto items-start">
         <ComponentSidebar onAdd={(c) => addComponent(c.name)} headerTheme="aurora" />
-      <div className="form-card flex-1" style={{ maxWidth: "none" }}>
+      <div ref={formRef} className="form-card flex-1" style={{ maxWidth: "none" }}>
         <AuroraHeader title="Network Management Pricing Memo" />
         <div className="form-body">
           <Row>
@@ -214,6 +212,7 @@ export const NetworkMemoForm = () => {
             </Field>
           </Row>
 
+          <div className="pdf-exclude">
           <Field label="File Upload">
             <div className="field-label-hint">(Attachments become pages 2+ of the PDF packet)</div>
             <label className="file-upload-area" aria-label="File Upload">
@@ -223,9 +222,11 @@ export const NetworkMemoForm = () => {
               <div className="file-name-display">{uploadedFiles.length ? uploadedFiles.map((f) => f.name).join(", ") : ""}</div>
             </label>
           </Field>
+          </div>
 
           <hr className="section-divider" />
 
+          <div className="pdf-exclude">
           <Field label="Send To (Recipient Email)">
             <TextInput
               type="email"
@@ -234,6 +235,7 @@ export const NetworkMemoForm = () => {
               onChange={(e) => setRecipientEmail(e.target.value)}
             />
           </Field>
+          </div>
         </div>
 
         <div className="action-bar print-hide">

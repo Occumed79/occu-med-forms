@@ -24,7 +24,7 @@ export const Row = ({ children }: { children: ReactNode }) => (
   <div className="field-row">{children}</div>
 );
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 export const TextInput = (props: InputProps) => (
   <input {...props} className="field-input" />
 );
@@ -36,7 +36,7 @@ export const Select = ({ children, ...props }: SelectProps) => (
   <select {...props} className="field-select">{children}</select>
 );
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 export const Textarea = (props: TextareaProps) => (
   <textarea {...props} className="field-textarea" />
 );
