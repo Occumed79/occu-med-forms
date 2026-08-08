@@ -5,6 +5,7 @@ import {
   documentTitle,
   validateProviderDocument,
 } from "@/lib/providerDocuments";
+import { adminDocumentLabel, invitationStatusLabel } from "@/lib/adminInvitations";
 
 describe("provider document workflow", () => {
   it("creates the two supported document variants with stable defaults", () => {
@@ -50,5 +51,12 @@ describe("provider document workflow", () => {
   it("tracks whether a service was added by Occu-Med or the provider", () => {
     expect(createProviderServiceRow("Spirometry", "$70.00").source).toBe("occu-med");
     expect(createProviderServiceRow("Chest X-ray", "$110.00", "provider").source).toBe("provider");
+  });
+
+  it("uses sender-facing labels for provider invitation records", () => {
+    expect(adminDocumentLabel("fee-proposal")).toBe("Fee Proposal");
+    expect(adminDocumentLabel("service-agreement")).toBe("Service Agreement");
+    expect(invitationStatusLabel("viewed")).toBe("Opened");
+    expect(invitationStatusLabel("cancelled")).toBe("Cancelled");
   });
 });

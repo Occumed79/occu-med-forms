@@ -6,7 +6,12 @@ Production architecture for Occu-Med forms:
 - **Backend**: Render Node API service (`backend/server.mjs`)
 - **Persistence**: Neon PostgreSQL (server-side only, via `DATABASE_URL`)
 
-The internal workspace provides these document tools through the floating switcher:
+The frontend has two deliberately separate experiences:
+
+- **Admin workspace (`/admin`)**: authenticated sender dashboard for creating invitations, tracking activity, resending or cancelling links, and downloading completed documents.
+- **Provider workspace (`/provider/:token`)**: recipient-only page for the single invited document, with no access to admin navigation or other forms.
+
+The admin workspace also provides these additional document tools through the Other Forms page:
 
 1. Provider Fee Proposal (default)
 2. Network Management Pricing Memo
@@ -53,6 +58,12 @@ Provider Fee Proposals and Provider Service Agreements use a provider-invitation
 - `POST /api/provider-invitations` → create provider-only invitation
 - `GET /api/provider-invitations/:token` → load and log provider review
 - `POST /api/provider-invitations/:token/finalize` → validate, hash, store, certify, and return the completed PDF
+- `GET /api/admin/provider-invitations` → list and filter invitation activity
+- `GET /api/admin/provider-invitations/:id` → inspect an invitation
+- `POST /api/admin/provider-invitations/:id/resend` → rotate and resend a secure provider link
+- `POST /api/admin/provider-invitations/:id/cancel` → invalidate an active invitation
+- `GET /api/admin/provider-invitations/:id/document` → download the completed PDF
+- `GET /api/admin/provider-invitations/:id/certificate` → download its audit certificate
 
 ## Neon setup
 
@@ -106,6 +117,7 @@ This repo includes `render.yaml` with **two services**.
 
 Required backend env vars:
 - `DATABASE_URL` (Neon pooled connection string)
+- `ADMIN_ACCESS_KEY` (private access code used to open the internal sender workspace)
 - `FRONTEND_ORIGIN` (the deployed frontend origin used for CORS)
 - `FRONTEND_APP_URL` (the deployed frontend URL used in provider invitation emails)
 - `NODE_ENV` (set to `production` on Render)

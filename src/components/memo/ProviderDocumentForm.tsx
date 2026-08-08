@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Copy, Download, Link2, Send, Trash2 } from "lucide-react";
+import { ArrowRight, Copy, Download, ExternalLink, Link2, Send, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { AddressBlock } from "./AddressBlock";
 import { ComponentSidebar } from "./ComponentSidebar";
 import { Field, Row, Select, Textarea, TextInput } from "./FormAtoms";
@@ -205,7 +206,13 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
                 <button type="button" className="btn btn-secondary shrink-0" onClick={() => navigator.clipboard.writeText(inviteLink)}>
                   <Copy size={15} /> Copy
                 </button>
+                <a className="btn btn-secondary shrink-0" href={inviteLink} target="_blank" rel="noreferrer">
+                  <ExternalLink size={15} /> Open
+                </a>
               </div>
+              <Link className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-800 hover:underline" to="/admin">
+                Return to invitation dashboard <ArrowRight size={14} />
+              </Link>
             </div>
           )}
         </div>

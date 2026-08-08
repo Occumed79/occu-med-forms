@@ -82,9 +82,35 @@ export interface ProviderDocumentData {
 
 export interface ProviderInvitation {
   documentType: ProviderDocumentType;
-  status: "sent" | "viewed" | "completed" | "expired";
+  status: ProviderInvitationStatus;
   data: ProviderDocumentData;
   createdAt: string;
   expiresAt: string;
   completedAt?: string;
+}
+
+export type ProviderInvitationStatus = "sent" | "viewed" | "completed" | "expired" | "cancelled";
+
+export interface AdminInvitationSummary {
+  id: string;
+  documentType: ProviderDocumentType;
+  status: ProviderInvitationStatus;
+  providerName: string;
+  documentNumber: string;
+  recipientEmail: string;
+  createdAt: string;
+  expiresAt: string;
+  viewedAt?: string;
+  completedAt?: string;
+  hasCompletedDocument: boolean;
+}
+
+export interface AdminInvitationDetail extends AdminInvitationSummary {
+  data: ProviderDocumentData;
+  pdfHash?: string;
+}
+
+export interface AdminInvitationList {
+  items: AdminInvitationSummary[];
+  counts: Record<ProviderInvitationStatus | "all", number>;
 }

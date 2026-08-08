@@ -1,9 +1,49 @@
-import type { ProviderDocumentData, ProviderDocumentType, ProviderInvitation } from "@/types/memo";
+import type {
+  AdminInvitationDetail,
+  AdminInvitationList,
+  ProviderDocumentData,
+  ProviderDocumentType,
+  ProviderInvitation,
+  ProviderInvitationStatus,
+} from "@/types/memo";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 function url(path: string) {
   return `${API_BASE}${path}`;
+}
+
+const ADMIN_KEY_STORAGE = "occu-med-admin-access";
+
+export function getAdminAccessKey() {
+  return sessionStorage.getItem(ADMIN_KEY_STORAGE) || "";
+}
+
+export function setAdminAccessKey(key: string) {
+  if (key) sessionStorage.setItem(ADMIN_KEY_STORAGE, key);
+  else sessionStorage.removeItem(ADMIN_KEY_STORAGE);
+}
+
+function adminHeaders(extra: Record<string, string> = {}) {
+  return { ...extra, "X-Admin-Key": getAdminAccessKey() };
+}
+
+async function responseError(res: Response) {
+  const responseText = await res.text();
+  try {
+    const body = JSON.parse(responseText) as { error?: string };
+    return body.error || `Request failed (${res.status})`;
+  } catch {
+    return responseText || `Request failed (${res.status})`;
+  }
+}
+
+export async function apiAdminSession(accessKey?: string) {
+  const res = await fetch(url("/api/admin/session"), {
+    headers: { "X-Admin-Key": accessKey ?? getAdminAccessKey() },
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true }>;
 }
 
 export async function apiCreateEnvelope() {
@@ -67,7 +107,7 @@ export async function apiCreateProviderInvitation(payload: {
 }) {
   const res = await fetch(url("/api/provider-invitations"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: adminHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await res.text());
@@ -78,6 +118,49 @@ export async function apiCreateProviderInvitation(payload: {
     expiresAt: string;
     emailSent: boolean;
   }>;
+}
+
+export async function apiListAdminInvitations(options: {
+  status?: ProviderInvitationStatus | "all";
+  query?: string;
+} = {}) {
+  const params = new URLSearchParams();
+  if (options.status && options.status !== "all") params.set("status", options.status);
+  if (options.query) params.set("q", options.query);
+  const suffix = params.size ? `?${params.toString()}` : "";
+  const res = await fetch(url(`/api/admin/provider-invitations${suffix}`), { headers: adminHeaders() });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<AdminInvitationList>;
+}
+
+export async function apiGetAdminInvitation(id: string) {
+  const res = await fetch(url(`/api/admin/provider-invitations/${encodeURIComponent(id)}`), { headers: adminHeaders() });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<AdminInvitationDetail>;
+}
+
+export async function apiResendAdminInvitation(id: string) {
+  const res = await fetch(url(`/api/admin/provider-invitations/${encodeURIComponent(id)}/resend`), {
+    method: "POST",
+    headers: adminHeaders(),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ providerPath: string; expiresAt: string; emailSent: boolean }>;
+}
+
+export async function apiCancelAdminInvitation(id: string) {
+  const res = await fetch(url(`/api/admin/provider-invitations/${encodeURIComponent(id)}/cancel`), {
+    method: "POST",
+    headers: adminHeaders(),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true; status: "cancelled" }>;
+}
+
+export async function apiDownloadAdminInvitationFile(id: string, kind: "document" | "certificate") {
+  const res = await fetch(url(`/api/admin/provider-invitations/${encodeURIComponent(id)}/${kind}`), { headers: adminHeaders() });
+  if (!res.ok) throw new Error(await responseError(res));
+  return new Uint8Array(await res.arrayBuffer());
 }
 
 export async function apiGetProviderInvitation(token: string) {

@@ -11,6 +11,7 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
 const FRONTEND_APP_URL = (process.env.FRONTEND_APP_URL || (FRONTEND_ORIGIN !== "*" ? FRONTEND_ORIGIN : "")).replace(/\/$/, "");
 const INVITATION_TTL_DAYS = Math.min(365, Math.max(1, Number(process.env.INVITATION_TTL_DAYS || 30) || 30));
 const PROVIDER_RESPONSES_TO = process.env.PROVIDER_RESPONSES_TO || "";
+const ADMIN_ACCESS_KEY = process.env.ADMIN_ACCESS_KEY || "";
 
 let pool = null;
 const rateWindows = new Map();
@@ -207,10 +208,63 @@ function sendJson(res, status, body) {
   res.writeHead(status, {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": FRONTEND_ORIGIN,
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   });
   res.end(JSON.stringify(body));
+}
+
+function sendPdf(res, bytes, filename) {
+  res.writeHead(200, {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `attachment; filename="${filename.replace(/[^a-z0-9_.-]/gi, "-")}"`,
+    "Content-Length": bytes.length,
+    "Access-Control-Allow-Origin": FRONTEND_ORIGIN,
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key",
+  });
+  res.end(bytes);
+}
+
+function hasAdminAccess(req) {
+  const supplied = typeof req.headers["x-admin-key"] === "string" ? req.headers["x-admin-key"] : "";
+  if (!ADMIN_ACCESS_KEY || !supplied) return false;
+  const expectedBytes = Buffer.from(ADMIN_ACCESS_KEY);
+  const suppliedBytes = Buffer.from(supplied);
+  return expectedBytes.length === suppliedBytes.length && crypto.timingSafeEqual(expectedBytes, suppliedBytes);
+}
+
+function requireAdminAccess(req, res) {
+  if (!ADMIN_ACCESS_KEY) {
+    sendJson(res, 503, { error: "Admin access is not configured on the backend." });
+    return false;
+  }
+  if (!hasAdminAccess(req)) {
+    sendJson(res, 401, { error: "The admin access code is incorrect." });
+    return false;
+  }
+  return true;
+}
+
+function adminInvitationRow(row, includeData = false) {
+  const data = row.completed_payload || row.payload || {};
+  const result = {
+    id: String(row.id),
+    documentType: row.document_type,
+    status: row.status,
+    providerName: data.providerName || "Unnamed provider",
+    documentNumber: data.documentNumber || `Invitation ${row.id}`,
+    recipientEmail: row.recipient_email || data.providerEmail || "",
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    viewedAt: row.viewed_at || undefined,
+    completedAt: row.completed_at || undefined,
+    hasCompletedDocument: Boolean(row.pdf_bytes),
+  };
+  if (includeData) {
+    result.data = data;
+    result.pdfHash = row.pdf_hash || undefined;
+  }
+  return result;
 }
 
 function readJson(req) {
@@ -353,7 +407,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": FRONTEND_ORIGIN,
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type, X-Admin-Key",
       "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     });
     return res.end();
@@ -366,10 +420,124 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true, databaseConfigured: Boolean(pool), service: "occu-med-backend", timestamp: new Date().toISOString() });
     }
 
+    if (req.method === "GET" && url.pathname === "/api/admin/session") {
+      if (!allowRequest(req, "admin-session", 120)) return sendJson(res, 429, { error: "Too many sign-in attempts. Please try again later." });
+      if (!requireAdminAccess(req, res)) return;
+      return sendJson(res, 200, { ok: true });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/provider-invitations") {
+      if (!requireAdminAccess(req, res)) return;
+      requireDatabase();
+      await pool.query(
+        "update provider_invitations set status = 'expired', updated_at = now() where status in ('sent','viewed') and expires_at < now()",
+      );
+      const allowedStatuses = new Set(["sent", "viewed", "completed", "expired", "cancelled"]);
+      const status = allowedStatuses.has(url.searchParams.get("status")) ? url.searchParams.get("status") : "";
+      const query = limitedText(url.searchParams.get("q"), 120);
+      const likeQuery = `%${query}%`;
+      const { rows } = await pool.query(
+        `select id, document_type, status, recipient_email, payload, completed_payload,
+                created_at, expires_at, viewed_at, completed_at, pdf_bytes
+           from provider_invitations
+          where ($1 = '' or status = $1)
+            and ($2 = '' or recipient_email ilike $3
+              or coalesce(completed_payload, payload)->>'providerName' ilike $3
+              or coalesce(completed_payload, payload)->>'documentNumber' ilike $3)
+          order by created_at desc
+          limit 200`,
+        [status, query, likeQuery],
+      );
+      const countResult = await pool.query(
+        `select status, count(*)::int as count from provider_invitations group by status`,
+      );
+      const counts = { all: 0, sent: 0, viewed: 0, completed: 0, expired: 0, cancelled: 0 };
+      for (const row of countResult.rows) {
+        if (Object.hasOwn(counts, row.status)) counts[row.status] = Number(row.count);
+        counts.all += Number(row.count);
+      }
+      return sendJson(res, 200, { items: rows.map((row) => adminInvitationRow(row)), counts });
+    }
+
+    const adminInvitationMatch = url.pathname.match(/^\/api\/admin\/provider-invitations\/(\d+)$/);
+    if (req.method === "GET" && adminInvitationMatch) {
+      if (!requireAdminAccess(req, res)) return;
+      requireDatabase();
+      const { rows } = await pool.query(
+        `select id, document_type, status, recipient_email, payload, completed_payload,
+                created_at, expires_at, viewed_at, completed_at, pdf_hash, pdf_bytes
+           from provider_invitations where id = $1`,
+        [adminInvitationMatch[1]],
+      );
+      if (!rows.length) return sendJson(res, 404, { error: "Invitation not found." });
+      return sendJson(res, 200, adminInvitationRow(rows[0], true));
+    }
+
+    const adminResendMatch = url.pathname.match(/^\/api\/admin\/provider-invitations\/(\d+)\/resend$/);
+    if (req.method === "POST" && adminResendMatch) {
+      if (!requireAdminAccess(req, res)) return;
+      requireDatabase();
+      const { rows } = await pool.query(
+        "select status, document_type, recipient_email, payload from provider_invitations where id = $1",
+        [adminResendMatch[1]],
+      );
+      if (!rows.length) return sendJson(res, 404, { error: "Invitation not found." });
+      if (rows[0].status === "completed") return sendJson(res, 409, { error: "A completed invitation cannot be resent." });
+      if (rows[0].status === "cancelled") return sendJson(res, 409, { error: "A cancelled invitation cannot be resent." });
+      const token = newInvitationToken();
+      const expiresAt = new Date(Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000);
+      await pool.query(
+        `update provider_invitations set token_hash = $2, status = 'sent', expires_at = $3,
+          viewed_at = null, viewed_ip = null, viewed_user_agent = null, updated_at = now() where id = $1`,
+        [adminResendMatch[1], tokenHash(token), expiresAt.toISOString()],
+      );
+      const providerPath = `/provider/${token}`;
+      const providerUrl = FRONTEND_APP_URL ? `${FRONTEND_APP_URL}${providerPath}` : "";
+      let emailSent = false;
+      try {
+        emailSent = await maybeSendProviderInvitation({
+          to: rows[0].recipient_email,
+          providerUrl,
+          documentType: rows[0].document_type,
+          providerName: rows[0].payload?.providerName,
+        });
+      } catch (error) {
+        console.error("provider invitation resend failed", error);
+      }
+      return sendJson(res, 200, { providerPath, expiresAt: expiresAt.toISOString(), emailSent });
+    }
+
+    const adminCancelMatch = url.pathname.match(/^\/api\/admin\/provider-invitations\/(\d+)\/cancel$/);
+    if (req.method === "POST" && adminCancelMatch) {
+      if (!requireAdminAccess(req, res)) return;
+      requireDatabase();
+      const result = await pool.query(
+        "update provider_invitations set status = 'cancelled', updated_at = now() where id = $1 and status not in ('completed','cancelled') returning id",
+        [adminCancelMatch[1]],
+      );
+      if (!result.rowCount) return sendJson(res, 409, { error: "Only an active invitation can be cancelled." });
+      return sendJson(res, 200, { ok: true, status: "cancelled" });
+    }
+
+    const adminFileMatch = url.pathname.match(/^\/api\/admin\/provider-invitations\/(\d+)\/(document|certificate)$/);
+    if (req.method === "GET" && adminFileMatch) {
+      if (!requireAdminAccess(req, res)) return;
+      requireDatabase();
+      const column = adminFileMatch[2] === "document" ? "pdf_bytes" : "certificate_bytes";
+      const { rows } = await pool.query(
+        `select ${column} as bytes, coalesce(completed_payload, payload)->>'documentNumber' as document_number
+           from provider_invitations where id = $1`,
+        [adminFileMatch[1]],
+      );
+      if (!rows.length || !rows[0].bytes) return sendJson(res, 404, { error: "The completed file is not available." });
+      return sendPdf(res, rows[0].bytes, `${rows[0].document_number || "provider-document"}-${adminFileMatch[2]}.pdf`);
+    }
+
     if (req.method === "POST" && url.pathname === "/api/provider-invitations") {
       if (!allowRequest(req, "provider-invitation-create", 30)) {
         return sendJson(res, 429, { error: "Too many invitations created. Please try again later." });
       }
+      if (!requireAdminAccess(req, res)) return;
       requireDatabase();
       const body = await readJson(req);
       const { documentType, data, recipientEmail } = body || {};
@@ -441,6 +609,7 @@ const server = http.createServer(async (req, res) => {
       );
       if (!rows.length) return sendJson(res, 404, { error: "Invitation not found." });
       const invite = rows[0];
+      if (invite.status === "cancelled") return sendJson(res, 410, { error: "Invitation cancelled." });
       const expired = new Date(invite.expires_at).getTime() < Date.now() && invite.status !== "completed";
       if (expired) {
         await pool.query("update provider_invitations set status = 'expired', updated_at = now() where token_hash = $1", [hash]);
