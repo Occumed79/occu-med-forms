@@ -59,6 +59,7 @@ describe("provider document workflow", () => {
   it("uses sender-facing labels for provider invitation records", () => {
     expect(adminDocumentLabel("fee-proposal")).toBe("Fee Proposal");
     expect(adminDocumentLabel("service-agreement")).toBe("Service Agreement");
+    expect(invitationStatusLabel("draft")).toBe("Ready to send");
     expect(invitationStatusLabel("returned")).toBe("Needs review");
     expect(invitationStatusLabel("viewed")).toBe("Opened");
     expect(invitationStatusLabel("cancelled")).toBe("Cancelled");

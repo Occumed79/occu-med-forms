@@ -22,12 +22,16 @@ The admin workspace also provides these additional document tools through the Ot
 Provider Fee Proposals and Provider Service Agreements use a provider-invitation workflow:
 
 1. Occu-Med prepares the provider, service, fee, and term information.
-2. The app creates a cryptographically random, document-specific provider URL.
-3. The provider URL renders only the invited document—there is no internal form switcher.
-4. The provider can remove unavailable services, add requested services, enter fees, complete contact information, and sign electronically.
-5. The exact on-screen preview becomes the signed PDF. The backend stores the completed bytes, SHA-256 hash, timestamps, client metadata, signature evidence, and audit certificate.
-6. If the provider changes a service or fee, the document enters **Needs review** instead of silently becoming final. Occu-Med sees an original-versus-returned change summary and must approve or reject it.
-7. When email is configured, unchanged completions are returned to Occu-Med and the provider. Changed terms go only to the configured Occu-Med review mailbox until approval; approval then releases the final document and certificate.
+2. The app creates a cryptographically random, document-specific provider URL and a personalized, editable invitation email.
+3. **Open in Outlook** opens Outlook Web with To, CC, Subject, message, and provider URL populated. Outlook sends from the mailbox the employee is already using, so the initial invitation does not require a mailbox API, OAuth connection, Resend domain verification, or IT approval.
+4. After sending, the employee selects **I sent it — mark as sent**. The account, recipient, CC, subject, and manual Outlook delivery method are added to the invitation audit history.
+5. The provider URL renders only the invited document—there is no internal form switcher.
+6. The provider can remove unavailable services, add requested services, enter fees, complete contact information, and sign electronically.
+7. The exact on-screen preview becomes the signed PDF. The backend stores the completed bytes, SHA-256 hash, timestamps, client metadata, signature evidence, and audit certificate.
+8. If the provider changes a service or fee, the document enters **Needs review** instead of silently becoming final. Occu-Med sees an original-versus-returned change summary and must approve or reject it.
+9. When optional server-side email is configured, unchanged completions are returned to Occu-Med and the provider. Changed terms go only to the configured Occu-Med review mailbox until approval; approval then releases the final document and certificate.
+
+New invitations begin in **Ready to send** status. **Copy email** is available when Outlook Web is blocked or the employee prefers another mail client. Rotating a link invalidates the old URL and prepares a new editable Outlook email.
 
 The signature evidence model is adapted from Occu-Med's PacketPath/DocuSign Replacement project: 48-byte recipient tokens, short-lived individual admin sessions, typed or drawn signatures, explicit electronic-record consent, canonical evidence hashes, chained audit events, decline handling, and independent verification of the original payload, final PDF, signature evidence, and audit chain.
 
@@ -88,7 +92,8 @@ To create the first owner, set `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`, 
 - `GET /api/admin/backups/export` → download a portable, integrity-manifested document backup (Owner)
 - `GET /api/admin/provider-invitations` → list and filter invitation activity
 - `GET /api/admin/provider-invitations/:id` → inspect an invitation
-- `POST /api/admin/provider-invitations/:id/resend` → rotate and resend a secure provider link
+- `POST /api/admin/provider-invitations/:id/resend` → invalidate the old URL and prepare a replacement provider link
+- `POST /api/admin/provider-invitations/:id/mark-sent` → record manual Outlook delivery details in the invitation history
 - `POST /api/admin/provider-invitations/:id/approve` → approve returned service or fee changes and finalize the agreement
 - `POST /api/admin/provider-invitations/:id/cancel` → invalidate an active invitation
 - `POST /api/admin/provider-invitations/:id/legal-hold` → apply or release a legal hold (Owner)
@@ -174,7 +179,7 @@ Required backend env vars:
 - `ADMIN_IDLE_MINUTES` (optional; default `30`)
 - `DOCUMENT_RETENTION_DAYS` (optional first-start default; `2555`)
 - `FRONTEND_ORIGIN` (the deployed frontend origin used for CORS)
-- `FRONTEND_APP_URL` (the deployed frontend URL used in provider invitation emails)
+- `FRONTEND_APP_URL` (the deployed frontend URL used for public verification links)
 - `NODE_ENV` (set to `production` on Render)
 - `ENVELOPE_PREFIX` (optional; default `OM`)
 - `INVITATION_TTL_DAYS` (optional; default `30`)
@@ -183,6 +188,8 @@ Optional server-side email env vars:
 - `RESEND_API_KEY`
 - `MAIL_FROM`
 - `PROVIDER_RESPONSES_TO` (Occu-Med mailbox that receives completed provider documents)
+
+These optional variables are used for automated completed-document delivery and review notifications. They are not required to prepare or send the initial provider invitation through Outlook.
 
 ### 2) Frontend service (`occu-med-frontend`)
 - Runtime: Static Site

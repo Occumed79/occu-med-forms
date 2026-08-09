@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, ArrowLeft, Ban, CheckCircle2, Copy, Download, ExternalLink, LockKeyhole, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Ban, CheckCircle2, Download, LockKeyhole, RefreshCw, ShieldCheck } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { InvitationDeliveryPanel } from "@/components/admin/InvitationDeliveryPanel";
 import { ProviderDocumentPreview } from "@/components/memo/ProviderDocumentPreview";
 import { useAdminUser } from "@/components/admin/adminAuth";
 import { adminDocumentLabel, formatAdminDate, invitationStatusLabel } from "@/lib/adminInvitations";
@@ -33,6 +34,16 @@ function describeServiceChanges(invite: AdminInvitationDetail) {
   return changes;
 }
 
+function describeEventDetails(event: AdminInvitationDetail["events"][number]) {
+  if (event.eventType !== "manual_send_confirmed") return "";
+  const sender = String(event.details.senderEmail || "");
+  const recipient = String(event.details.recipientEmail || "");
+  const cc = String(event.details.cc || "");
+  const subject = String(event.details.subject || "");
+  const delivery = sender && recipient ? `${sender} → ${recipient}` : sender || recipient;
+  return [delivery, cc ? `CC ${cc}` : "", subject].filter(Boolean).join(" · ");
+}
+
 export default function AdminInvitationDetailPage() {
   const user = useAdminUser();
   const canDownload = user.permissions.includes("download_documents");
@@ -62,9 +73,8 @@ export default function AdminInvitationDetailPage() {
       const result = await apiResendAdminInvitation(id);
       const link = new URL(result.providerPath, window.location.origin).toString();
       setProviderLink(link);
-      try { await navigator.clipboard.writeText(link); } catch { /* copy control remains */ }
       await load();
-    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not resend invitation."); }
+    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not prepare a new invitation email."); }
     finally { setBusy(false); }
   };
 
@@ -104,12 +114,14 @@ export default function AdminInvitationDetailPage() {
   if (loading && !invite) return <main className="admin-main"><div className="admin-detail-loading">Loading invitation…</div></main>;
   if (!invite) return <main className="admin-main"><Link className="admin-back-link" to="/admin"><ArrowLeft size={16} /> Invitations</Link><div className="admin-table-message error">{error || "Invitation not found."}</div></main>;
 
-  const active = invite.status === "sent" || invite.status === "viewed" || invite.status === "expired";
+  const active = invite.status === "draft" || invite.status === "sent" || invite.status === "viewed" || invite.status === "expired";
   const serviceChanges = describeServiceChanges(invite);
   const eventLabel = (eventType: string) => ({
     created: "Invitation created",
     email_sent: "Invitation emailed",
     link_created: "Secure link created",
+    link_rotated: "New provider link created",
+    manual_send_confirmed: "Outlook send confirmed",
     viewed: "Provider opened document",
     resent: "Invitation resent",
     completed: "Provider signed and completed",
@@ -138,8 +150,8 @@ export default function AdminInvitationDetailPage() {
         <div className="admin-detail-actions">
           {canDownload && invite.hasCompletedDocument && <><button type="button" onClick={() => download("document")} disabled={busy}><Download size={16} /> {invite.status === "returned" ? "Returned PDF" : "Final PDF"}</button><button type="button" onClick={() => download("certificate")} disabled={busy}><Download size={16} /> Certificate</button></>}
           {canApprove && invite.status === "returned" && <button type="button" className="primary" onClick={approve} disabled={busy}><CheckCircle2 size={16} /> Approve changes</button>}
-          {canManage && active && <button type="button" className="primary" onClick={resend} disabled={busy}><RefreshCw size={16} /> Resend / new link</button>}
-          {canManage && (invite.status === "sent" || invite.status === "viewed" || invite.status === "expired" || invite.status === "returned") && <button type="button" className="danger" onClick={cancel} disabled={busy}><Ban size={16} /> {invite.status === "returned" ? "Reject & cancel" : "Cancel"}</button>}
+          {canManage && active && <button type="button" className="primary" onClick={resend} disabled={busy}><RefreshCw size={16} /> Prepare new email / link</button>}
+          {canManage && (invite.status === "draft" || invite.status === "sent" || invite.status === "viewed" || invite.status === "expired" || invite.status === "returned") && <button type="button" className="danger" onClick={cancel} disabled={busy}><Ban size={16} /> {invite.status === "returned" ? "Reject & cancel" : "Cancel"}</button>}
           {canManageRetention && <button type="button" onClick={() => void toggleLegalHold()} disabled={busy}><LockKeyhole size={16} /> {invite.legalHold ? "Release legal hold" : "Apply legal hold"}</button>}
         </div>
       </section>
@@ -167,15 +179,24 @@ export default function AdminInvitationDetailPage() {
         </div>
       </section>
       {providerLink && (
-        <section className="admin-new-link" role="status">
-          <CheckCircle2 size={18} /><div><strong>New provider link created</strong><p>The previous link is no longer valid.</p><div><input readOnly value={providerLink} /><button type="button" onClick={() => navigator.clipboard.writeText(providerLink)}><Copy size={15} /> Copy</button><a href={providerLink} target="_blank" rel="noreferrer"><ExternalLink size={15} /> Open</a></div></div>
-        </section>
+        <InvitationDeliveryPanel
+          key={providerLink}
+          invitationId={id}
+          providerLink={providerLink}
+          providerName={invite.providerName}
+          providerContactName={invite.data.providerContactName}
+          recipientEmail={invite.recipientEmail || invite.data.providerEmail}
+          documentType={invite.documentType}
+          documentNumber={invite.documentNumber}
+          replacementLink
+          onMarkedSent={load}
+        />
       )}
 
       <div className="admin-detail-grid">
         <aside className="admin-detail-sidebar">
           <section><h2>Recipient</h2><dl><div><dt>Contact</dt><dd>{invite.data.providerContactName || "—"}</dd></div><div><dt>Email</dt><dd>{invite.recipientEmail || "Link only"}</dd></div><div><dt>Telephone</dt><dd>{invite.data.providerPhone || "—"}</dd></div></dl></section>
-          <section><h2>Activity</h2><ol className="admin-timeline">{invite.events.length ? invite.events.map((event) => <li className="done" key={event.eventHash}><strong>{eventLabel(event.eventType)}</strong><span>{formatAdminDate(event.createdAt)}</span></li>) : <li><strong>No audit events recorded</strong><span>Legacy invitation</span></li>}</ol></section>
+          <section><h2>Activity</h2><ol className="admin-timeline">{invite.events.length ? invite.events.map((event) => <li className="done" key={event.eventHash}><strong>{eventLabel(event.eventType)}</strong>{describeEventDetails(event) && <small>{describeEventDetails(event)}</small>}<span>{formatAdminDate(event.createdAt)}</span></li>) : <li><strong>No audit events recorded</strong><span>Legacy invitation</span></li>}</ol></section>
           <section><h2>Terms</h2><dl><div><dt>Billing</dt><dd>{invite.data.billingTerms}</dd></div><div><dt>Expires</dt><dd>{formatAdminDate(invite.expiresAt)}</dd></div><div><dt>Services</dt><dd>{invite.data.services.length}</dd></div></dl></section>
           <section><h2>Retention</h2><dl><div><dt>Retain until</dt><dd>{formatAdminDate(invite.retentionExpiresAt)}</dd></div><div><dt>Legal hold</dt><dd>{invite.legalHold ? "Applied — excluded from cleanup" : "Not applied"}</dd></div></dl></section>
           {serviceChanges.length > 0 && <section><h2>Provider term changes</h2><ul className="admin-service-changes">{serviceChanges.map((change) => <li key={change}>{change}</li>)}</ul></section>}

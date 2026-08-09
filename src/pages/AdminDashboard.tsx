@@ -18,11 +18,12 @@ import { apiListAdminInvitations } from "@/lib/backend";
 import type { AdminInvitationList, ProviderInvitationStatus } from "@/types/memo";
 
 const EMPTY_COUNTS: AdminInvitationList["counts"] = {
-  all: 0, sent: 0, viewed: 0, returned: 0, completed: 0, declined: 0, expired: 0, cancelled: 0,
+  all: 0, draft: 0, sent: 0, viewed: 0, returned: 0, completed: 0, declined: 0, expired: 0, cancelled: 0,
 };
 
 const filters: Array<{ value: ProviderInvitationStatus | "all"; label: string }> = [
   { value: "all", label: "All" },
+  { value: "draft", label: "Ready to send" },
   { value: "sent", label: "Sent" },
   { value: "viewed", label: "Opened" },
   { value: "returned", label: "Needs review" },
@@ -115,7 +116,7 @@ export default function AdminDashboardPage() {
         {result.items.length > 0 ? (
           <div className="admin-table-scroll">
             <table className="admin-invitation-table">
-              <thead><tr><th>Provider</th><th>Document</th><th>Status</th><th>Sent</th><th>Last activity</th><th><span className="sr-only">Open</span></th></tr></thead>
+              <thead><tr><th>Provider</th><th>Document</th><th>Status</th><th>Created</th><th>Last activity</th><th><span className="sr-only">Open</span></th></tr></thead>
               <tbody>
                 {result.items.map((invite) => (
                   <tr key={invite.id}>

@@ -1,6 +1,7 @@
 import type { ProviderDocumentType, ProviderInvitationStatus } from "@/types/memo";
 
 export const ADMIN_STATUS_LABELS: Record<ProviderInvitationStatus, string> = {
+  draft: "Ready to send",
   sent: "Sent",
   viewed: "Opened",
   returned: "Needs review",

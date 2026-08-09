@@ -97,7 +97,7 @@ export interface ProviderInvitation {
   electronicRecordConsentText?: string;
 }
 
-export type ProviderInvitationStatus = "sent" | "viewed" | "returned" | "completed" | "declined" | "expired" | "cancelled";
+export type ProviderInvitationStatus = "draft" | "sent" | "viewed" | "returned" | "completed" | "declined" | "expired" | "cancelled";
 
 export interface AdminInvitationSummary {
   id: string;

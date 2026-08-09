@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
-import { ArrowRight, Copy, Download, ExternalLink, Link2, Send, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Download, Link2, Mail, Trash2 } from "lucide-react";
+import { InvitationDeliveryPanel } from "@/components/admin/InvitationDeliveryPanel";
+import { useAdminUser } from "@/components/admin/adminAuth";
 import { AddressBlock } from "./AddressBlock";
 import { ComponentSidebar } from "./ComponentSidebar";
 import { Field, Row, Select, Textarea, TextInput } from "./FormAtoms";
@@ -8,7 +9,7 @@ import { NavyHeader } from "./Headers";
 import { ProviderDocumentPreview } from "./ProviderDocumentPreview";
 import { apiCreateProviderInvitation } from "@/lib/backend";
 import { downloadPdf } from "@/lib/fileDownload";
-import { pdfBytesToBase64, providerDocumentPdf } from "@/lib/documentCapture";
+import { providerDocumentPdf } from "@/lib/documentCapture";
 import {
   createProviderDocumentData,
   createProviderServiceRow,
@@ -28,10 +29,13 @@ function safeFilename(data: ProviderDocumentData) {
 }
 
 export const ProviderDocumentForm = ({ documentType }: Props) => {
-  const [data, setData] = useState<ProviderDocumentData>(() => createProviderDocumentData(documentType));
+  const user = useAdminUser();
+  const [data, setData] = useState<ProviderDocumentData>(() => ({
+    ...createProviderDocumentData(documentType),
+    preparedBy: user.displayName,
+  }));
   const [busy, setBusy] = useState(false);
-  const [inviteLink, setInviteLink] = useState("");
-  const [inviteEmailSent, setInviteEmailSent] = useState(false);
+  const [delivery, setDelivery] = useState<{ invitationId: string; providerLink: string } | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -85,14 +89,10 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
         recipientEmail: data.providerEmail.trim() || undefined,
       });
       const link = new URL(result.providerPath, window.location.origin).toString();
-      setInviteLink(link);
-      setInviteEmailSent(result.emailSent);
-      try { await navigator.clipboard.writeText(link); } catch { /* copy button remains available */ }
+      setDelivery({ invitationId: result.invitationId, providerLink: link });
       toast({
-        title: result.emailSent ? "Invitation sent" : "Invitation link created",
-        description: result.emailSent
-          ? "The provider-specific link was emailed and copied to your clipboard."
-          : "The provider-specific link was copied to your clipboard.",
+        title: "Invitation email ready",
+        description: "Review the personalized message below, then open it in your Outlook mailbox.",
       });
     } catch (error) {
       toast({ title: "Could not create invitation", description: String(error), variant: "destructive" });
@@ -109,8 +109,8 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
         <NavyHeader title={`Occu-Med, LTD\n${documentTitle(documentType)}`} />
         <div className="form-body">
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-5 text-sm text-blue-950">
-            Prepare the document here, then send a provider-specific link. The provider can review only this
-            document, add or remove services, complete its signature, and return the final PDF.
+            Prepare the document here, then create a personalized Outlook email with a provider-specific link.
+            The provider can review only this document, add or remove services, sign it, and return the final PDF.
           </div>
 
           <Row>
@@ -197,23 +197,17 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
             <ProviderDocumentPreview ref={previewRef} data={data} invitationStatus="Draft" />
           </div>
 
-          {inviteLink && (
-            <div className="invite-link-panel" role="status">
-              <strong>{inviteEmailSent ? "Invitation emailed" : "Provider invitation ready"}</strong>
-              <p className="text-xs mt-1">This link opens only this document and its provider completion controls.</p>
-              <div className="flex gap-2 items-center mt-2">
-                <input readOnly value={inviteLink} aria-label="Provider invitation link" />
-                <button type="button" className="btn btn-secondary shrink-0" onClick={() => navigator.clipboard.writeText(inviteLink)}>
-                  <Copy size={15} /> Copy
-                </button>
-                <a className="btn btn-secondary shrink-0" href={inviteLink} target="_blank" rel="noreferrer">
-                  <ExternalLink size={15} /> Open
-                </a>
-              </div>
-              <Link className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-800 hover:underline" to="/admin">
-                Return to invitation dashboard <ArrowRight size={14} />
-              </Link>
-            </div>
+          {delivery && (
+            <InvitationDeliveryPanel
+              key={delivery.providerLink}
+              invitationId={delivery.invitationId}
+              providerLink={delivery.providerLink}
+              providerName={data.providerName}
+              providerContactName={data.providerContactName}
+              recipientEmail={data.providerEmail}
+              documentType={documentType}
+              documentNumber={data.documentNumber}
+            />
           )}
         </div>
 
@@ -226,7 +220,7 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
               <Download size={16} /> Download exact PDF
             </button>
             <button type="button" onClick={handleInvite} disabled={busy} className="btn-base btn-navy inline-flex items-center gap-2">
-              <Send size={16} /> {busy ? "Creating…" : data.providerEmail ? "Create & Send Invite" : "Create Provider Link"}
+              <Mail size={16} /> {busy ? "Creating…" : "Create invitation email"}
             </button>
           </div>
         </div>

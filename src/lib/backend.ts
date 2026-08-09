@@ -133,11 +133,12 @@ export async function apiCreateProviderInvitation(payload: {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{
+    invitationId: string;
     token: string;
     providerPath: string;
     createdAt: string;
     expiresAt: string;
-    emailSent: boolean;
+    status: "draft";
   }>;
 }
 
@@ -166,7 +167,21 @@ export async function apiResendAdminInvitation(id: string) {
     headers: adminHeaders(),
   });
   if (!res.ok) throw new Error(await responseError(res));
-  return res.json() as Promise<{ providerPath: string; expiresAt: string; emailSent: boolean }>;
+  return res.json() as Promise<{ providerPath: string; expiresAt: string; status: "draft" }>;
+}
+
+export async function apiMarkAdminInvitationSent(id: string, payload: {
+  recipientEmail: string;
+  cc?: string;
+  subject: string;
+}) {
+  const res = await fetch(url(`/api/admin/provider-invitations/${encodeURIComponent(id)}/mark-sent`), {
+    method: "POST",
+    headers: adminHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true; status: ProviderInvitationStatus; recipientEmail: string }>;
 }
 
 export async function apiCancelAdminInvitation(id: string) {
