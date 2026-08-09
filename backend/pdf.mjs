@@ -108,6 +108,7 @@ export async function generateCertificatePdf({ envelopeId, pdfHash, audit }) {
   row("Signature Type", audit.signatureType);
   row("Signature SHA-256", audit.signatureHash);
   row("Evidence SHA-256", audit.evidenceHash);
+  if (audit.verificationUrl) row("Verify Certificate", audit.verificationUrl);
   row("Agreement Status", audit.reviewStatus);
   if (audit.approvedAt) row("Occu-Med Approved", audit.approvedAt);
   row("Created", audit.createdAt);

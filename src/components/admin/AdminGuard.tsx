@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { apiAdminSession, getAdminSessionToken, setAdminSessionToken } from "@/lib/backend";
+import { AdminAuthContext } from "./adminAuth";
+import type { AdminUser } from "@/types/memo";
 
 export function AdminGuard() {
   const location = useLocation();
   const [state, setState] = useState<"checking" | "allowed" | "denied">(
     getAdminSessionToken() ? "checking" : "denied",
   );
+  const [user, setUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     if (!getAdminSessionToken()) return;
     let active = true;
     apiAdminSession()
-      .then(() => { if (active) setState("allowed"); })
+      .then((result) => { if (active) { setUser(result.user); setState("allowed"); } })
       .catch(() => {
         setAdminSessionToken("");
         if (active) setState("denied");
@@ -26,5 +29,6 @@ export function AdminGuard() {
   if (state === "denied") {
     return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
   }
-  return <Outlet />;
+  if (!user) return null;
+  return <AdminAuthContext.Provider value={user}><Outlet /></AdminAuthContext.Provider>;
 }

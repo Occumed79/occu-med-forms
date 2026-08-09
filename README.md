@@ -29,7 +29,20 @@ Provider Fee Proposals and Provider Service Agreements use a provider-invitation
 6. If the provider changes a service or fee, the document enters **Needs review** instead of silently becoming final. Occu-Med sees an original-versus-returned change summary and must approve or reject it.
 7. When email is configured, unchanged completions are returned to Occu-Med and the provider. Changed terms go only to the configured Occu-Med review mailbox until approval; approval then releases the final document and certificate.
 
-The signature evidence model is adapted from Occu-Med's PacketPath/DocuSign Replacement project: 48-byte recipient tokens, short-lived admin sessions, typed or drawn signatures, explicit electronic-record consent, canonical evidence hashes, chained audit events, decline handling, and independent verification of the original payload, final PDF, signature evidence, and audit chain.
+The signature evidence model is adapted from Occu-Med's PacketPath/DocuSign Replacement project: 48-byte recipient tokens, short-lived individual admin sessions, typed or drawn signatures, explicit electronic-record consent, canonical evidence hashes, chained audit events, decline handling, and independent verification of the original payload, final PDF, signature evidence, and audit chain.
+
+## Admin accounts and roles
+
+The shared admin access code has been replaced by individual email/password accounts. Passwords are hashed with scrypt, sessions have both an absolute expiry and an inactivity timeout, role checks are enforced in the backend, and sign-ins/account changes are recorded in the security audit.
+
+| Role | Access |
+| --- | --- |
+| Owner | All document actions, user administration, retention settings, legal holds, backups, and security audit |
+| Manager | All document actions and returned-term approvals, plus security audit |
+| Sender | Create, send, resend, cancel, view, and download documents |
+| Auditor | Read-only document, download, and security-audit access |
+
+To create the first owner, set `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`, and optionally `INITIAL_ADMIN_NAME` on the backend, then deploy once. The initial password must contain at least 12 characters with uppercase, lowercase, and a number. Bootstrap values are used only when `admin_users` is empty; after the owner can sign in, the initial email/password variables can be removed. Additional accounts are created at **Admin → Accounts**.
 
 ## Responsibility split
 
@@ -64,16 +77,24 @@ The signature evidence model is adapted from Occu-Med's PacketPath/DocuSign Repl
 - `POST /api/provider-invitations/:token/decline` → record a provider decline and optional reason
 - `GET /api/provider-invitations/:token/document` → download the authoritative completed PDF
 - `GET /api/provider-invitations/:token/certificate` → download the authoritative completion certificate
-- `POST /api/admin/session` → exchange the admin access code for a revocable session token
+- `POST /api/admin/session` → sign in with an individual email/password and issue a revocable session token
 - `GET /api/admin/session` → validate and refresh an active admin session
 - `POST /api/admin/logout` → revoke the active admin session
+- `GET|POST /api/admin/users` → list or create individual accounts (Owner)
+- `POST /api/admin/users/:id` → change an account role, status, name, or password (Owner)
+- `POST /api/admin/account/password` → change the current user's password
+- `GET /api/admin/security-audit` → view recent account-security activity
+- `GET|POST /api/admin/retention` → inspect or update retention eligibility rules (Owner)
+- `GET /api/admin/backups/export` → download a portable, integrity-manifested document backup (Owner)
 - `GET /api/admin/provider-invitations` → list and filter invitation activity
 - `GET /api/admin/provider-invitations/:id` → inspect an invitation
 - `POST /api/admin/provider-invitations/:id/resend` → rotate and resend a secure provider link
 - `POST /api/admin/provider-invitations/:id/approve` → approve returned service or fee changes and finalize the agreement
 - `POST /api/admin/provider-invitations/:id/cancel` → invalidate an active invitation
+- `POST /api/admin/provider-invitations/:id/legal-hold` → apply or release a legal hold (Owner)
 - `GET /api/admin/provider-invitations/:id/document` → download the completed PDF
 - `GET /api/admin/provider-invitations/:id/certificate` → download its audit certificate
+- `GET /api/verify/:evidenceHash` → public certificate verification without exposing private audit metadata
 
 ## Neon setup
 
@@ -81,7 +102,29 @@ The signature evidence model is adapted from Occu-Med's PacketPath/DocuSign Repl
 2. Copy the pooled connection string (e.g., `postgresql://user:pass@host-pooler.us-east-1.aws.neon.tech/dbname?sslmode=require`).
 3. Set it as the `DATABASE_URL` environment variable on your Render backend service.
 
-The backend auto-creates the `envelopes` table on startup with this schema:
+The backend auto-creates the signed-document, invitation, account, session, audit, and retention tables on startup. Invitation tokens and admin session tokens are never stored directly; only their SHA-256 hashes are persisted. Invitations expire after 30 days by default and completed documents remain locked.
+
+## Retention and recovery policy
+
+The Governance page defines when records become eligible for a reviewed cleanup process; the app does not automatically destroy records. Defaults are:
+
+- completed signed documents and certificates: 2,555 days (seven years);
+- declined, expired, or cancelled invitations: 365 days;
+- account-security history: 730 days;
+- legal holds: excluded from cleanup eligibility until an Owner releases the hold.
+
+Owners can download a portable JSON backup containing invitation records, PDFs, certificates, and chained document events. Password hashes and account credentials are excluded. Each export includes a SHA-256 manifest.
+
+Recommended operating procedure:
+
+1. Use Neon's point-in-time restore/history as the primary recovery layer.
+2. Store a weekly portable export in approved encrypted storage with restricted access.
+3. Keep at least one monthly export outside the primary database project.
+4. Perform and document a quarterly restore test before relying on the backups.
+
+Official Neon references: [branch restore](https://neon.com/docs/introduction/branch-restore), [history retention](https://neon.com/docs/introduction/history-window), and [backup/restore guidance](https://neon.com/docs/manage/backups).
+
+The legacy `envelopes` table has this schema:
 
 ```sql
 create table if not exists envelopes (
@@ -113,8 +156,6 @@ create table if not exists envelopes (
 );
 ```
 
-The backend also auto-creates `provider_invitations`. Invitation tokens are never stored directly; only their SHA-256 hashes are persisted. Invitations expire after 30 days by default and completed documents remain locked.
-
 ## Render deployment (exact)
 
 This repo includes `render.yaml` with **two services**.
@@ -127,9 +168,11 @@ This repo includes `render.yaml` with **two services**.
 
 Required backend env vars:
 - `DATABASE_URL` (Neon pooled connection string)
-- `ADMIN_ACCESS_KEY` (private access code used to open the internal sender workspace)
+- `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD` (one-time bootstrap values for the first Owner)
+- `INITIAL_ADMIN_NAME` (optional display name for the first Owner)
 - `ADMIN_SESSION_HOURS` (optional; default `8`)
 - `ADMIN_IDLE_MINUTES` (optional; default `30`)
+- `DOCUMENT_RETENTION_DAYS` (optional first-start default; `2555`)
 - `FRONTEND_ORIGIN` (the deployed frontend origin used for CORS)
 - `FRONTEND_APP_URL` (the deployed frontend URL used in provider invitation emails)
 - `NODE_ENV` (set to `production` on Render)

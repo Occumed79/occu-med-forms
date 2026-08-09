@@ -1,10 +1,15 @@
 import type {
   AdminInvitationDetail,
   AdminInvitationList,
+  AdminRole,
+  AdminUser,
+  AuthAuditEvent,
+  CertificateVerification,
   ProviderDocumentData,
   ProviderDocumentType,
   ProviderInvitation,
   ProviderInvitationStatus,
+  RetentionPolicy,
 } from "@/types/memo";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -38,14 +43,14 @@ async function responseError(res: Response) {
   }
 }
 
-export async function apiAdminLogin(accessCode: string) {
+export async function apiAdminLogin(email: string, password: string) {
   const res = await fetch(url("/api/admin/session"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ accessCode }),
+    body: JSON.stringify({ email, password }),
   });
   if (!res.ok) throw new Error(await responseError(res));
-  return res.json() as Promise<{ ok: true; token: string; expiresAt: string; idleMinutes: number }>;
+  return res.json() as Promise<{ ok: true; token: string; expiresAt: string; idleMinutes: number; user: AdminUser }>;
 }
 
 export async function apiAdminSession() {
@@ -53,7 +58,7 @@ export async function apiAdminSession() {
     headers: adminHeaders(),
   });
   if (!res.ok) throw new Error(await responseError(res));
-  return res.json() as Promise<{ ok: true; idleMinutes: number }>;
+  return res.json() as Promise<{ ok: true; idleMinutes: number; user: AdminUser }>;
 }
 
 export async function apiAdminLogout() {
@@ -63,13 +68,13 @@ export async function apiAdminLogout() {
 }
 
 export async function apiCreateEnvelope() {
-  const res = await fetch(url("/api/signed/envelopes"), { method: "POST" });
+  const res = await fetch(url("/api/signed/envelopes"), { method: "POST", headers: adminHeaders() });
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{ envelopeId: string; createdAt: string }>;
 }
 
 export async function apiLogView(envelopeId: string) {
-  const res = await fetch(url(`/api/signed/envelopes/${envelopeId}/view`), { method: "POST" });
+  const res = await fetch(url(`/api/signed/envelopes/${envelopeId}/view`), { method: "POST", headers: adminHeaders() });
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{ envelopeId: string; viewedAt: string }>;
 }
@@ -80,7 +85,7 @@ export async function apiFinalizeEnvelope(
 ) {
   const res = await fetch(url(`/api/signed/envelopes/${envelopeId}/finalize`), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: adminHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await res.text());
@@ -109,7 +114,7 @@ export async function apiSendMemoPdf(payload: {
 }) {
   const res = await fetch(url("/api/memos/send"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: adminHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await res.text());
@@ -188,6 +193,16 @@ export async function apiDownloadAdminInvitationFile(id: string, kind: "document
   return new Uint8Array(await res.arrayBuffer());
 }
 
+export async function apiSetInvitationLegalHold(id: string, active: boolean) {
+  const res = await fetch(url(`/api/admin/provider-invitations/${encodeURIComponent(id)}/legal-hold`), {
+    method: "POST",
+    headers: adminHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ active }),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true; legalHold: boolean }>;
+}
+
 export async function apiGetProviderInvitation(token: string) {
   const res = await fetch(url(`/api/provider-invitations/${encodeURIComponent(token)}`));
   if (!res.ok) throw new Error(await res.text());
@@ -231,4 +246,85 @@ export async function apiDownloadProviderInvitationFile(token: string, kind: "do
   const res = await fetch(url(`/api/provider-invitations/${encodeURIComponent(token)}/${kind}`));
   if (!res.ok) throw new Error(await responseError(res));
   return new Uint8Array(await res.arrayBuffer());
+}
+
+export async function apiListAdminUsers() {
+  const res = await fetch(url("/api/admin/users"), { headers: adminHeaders() });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ users: AdminUser[]; roles: AdminRole[] }>;
+}
+
+export async function apiCreateAdminUser(payload: {
+  displayName: string;
+  email: string;
+  role: AdminRole;
+  password: string;
+}) {
+  const res = await fetch(url("/api/admin/users"), {
+    method: "POST",
+    headers: adminHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ user: AdminUser }>;
+}
+
+export async function apiUpdateAdminUser(id: string, payload: {
+  displayName?: string;
+  role?: AdminRole;
+  active?: boolean;
+  password?: string;
+}) {
+  const res = await fetch(url(`/api/admin/users/${encodeURIComponent(id)}`), {
+    method: "POST",
+    headers: adminHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ user: AdminUser }>;
+}
+
+export async function apiChangeAdminPassword(currentPassword: string, newPassword: string) {
+  const res = await fetch(url("/api/admin/account/password"), {
+    method: "POST",
+    headers: adminHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true }>;
+}
+
+export async function apiGetSecurityAudit() {
+  const res = await fetch(url("/api/admin/security-audit"), { headers: adminHeaders() });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ events: AuthAuditEvent[] }>;
+}
+
+export async function apiGetRetentionPolicy() {
+  const res = await fetch(url("/api/admin/retention"), { headers: adminHeaders() });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<RetentionPolicy>;
+}
+
+export async function apiUpdateRetentionPolicy(payload: Pick<RetentionPolicy, "completedDocumentDays" | "inactiveInvitationDays" | "authAuditDays">) {
+  const res = await fetch(url("/api/admin/retention"), {
+    method: "POST",
+    headers: adminHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true }>;
+}
+
+export async function apiDownloadBackup() {
+  const res = await fetch(url("/api/admin/backups/export"), { headers: adminHeaders() });
+  if (!res.ok) throw new Error(await responseError(res));
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+export async function apiVerifyCertificate(evidenceHash: string) {
+  const normalized = evidenceHash.trim().toLowerCase();
+  const res = await fetch(url(`/api/verify/${encodeURIComponent(normalized)}`));
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<CertificateVerification>;
 }

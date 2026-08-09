@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, ArrowLeft, Ban, CheckCircle2, Copy, Download, ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Ban, CheckCircle2, Copy, Download, ExternalLink, LockKeyhole, RefreshCw, ShieldCheck } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { ProviderDocumentPreview } from "@/components/memo/ProviderDocumentPreview";
+import { useAdminUser } from "@/components/admin/adminAuth";
 import { adminDocumentLabel, formatAdminDate, invitationStatusLabel } from "@/lib/adminInvitations";
 import {
   apiApproveAdminInvitation,
@@ -9,6 +10,7 @@ import {
   apiDownloadAdminInvitationFile,
   apiGetAdminInvitation,
   apiResendAdminInvitation,
+  apiSetInvitationLegalHold,
 } from "@/lib/backend";
 import { downloadPdf } from "@/lib/fileDownload";
 import type { AdminInvitationDetail } from "@/types/memo";
@@ -32,6 +34,11 @@ function describeServiceChanges(invite: AdminInvitationDetail) {
 }
 
 export default function AdminInvitationDetailPage() {
+  const user = useAdminUser();
+  const canDownload = user.permissions.includes("download_documents");
+  const canManage = user.permissions.includes("manage_invitations");
+  const canApprove = user.permissions.includes("approve_terms");
+  const canManageRetention = user.permissions.includes("manage_retention");
   const { id = "" } = useParams();
   const [invite, setInvite] = useState<AdminInvitationDetail | null>(null);
   const [providerLink, setProviderLink] = useState("");
@@ -77,6 +84,13 @@ export default function AdminInvitationDetailPage() {
     finally { setBusy(false); }
   };
 
+  const toggleLegalHold = async () => {
+    setBusy(true); setError("");
+    try { await apiSetInvitationLegalHold(id, !invite?.legalHold); await load(); }
+    catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not update the legal hold."); }
+    finally { setBusy(false); }
+  };
+
   const download = async (kind: "document" | "certificate") => {
     if (!invite) return;
     setBusy(true); setError("");
@@ -108,6 +122,8 @@ export default function AdminInvitationDetailPage() {
     certificate_downloaded: "Certificate downloaded",
     provider_document_downloaded: "Provider downloaded returned PDF",
     provider_certificate_downloaded: "Provider downloaded certificate",
+    legal_hold_applied: "Legal hold applied",
+    legal_hold_released: "Legal hold released",
   }[eventType] || eventType.replaceAll("_", " "));
 
   return (
@@ -120,10 +136,11 @@ export default function AdminInvitationDetailPage() {
           <p>{invite.documentNumber}</p>
         </div>
         <div className="admin-detail-actions">
-          {invite.hasCompletedDocument && <><button type="button" onClick={() => download("document")} disabled={busy}><Download size={16} /> {invite.status === "returned" ? "Returned PDF" : "Final PDF"}</button><button type="button" onClick={() => download("certificate")} disabled={busy}><Download size={16} /> Certificate</button></>}
-          {invite.status === "returned" && <button type="button" className="primary" onClick={approve} disabled={busy}><CheckCircle2 size={16} /> Approve changes</button>}
-          {active && <button type="button" className="primary" onClick={resend} disabled={busy}><RefreshCw size={16} /> Resend / new link</button>}
-          {(invite.status === "sent" || invite.status === "viewed" || invite.status === "expired" || invite.status === "returned") && <button type="button" className="danger" onClick={cancel} disabled={busy}><Ban size={16} /> {invite.status === "returned" ? "Reject & cancel" : "Cancel"}</button>}
+          {canDownload && invite.hasCompletedDocument && <><button type="button" onClick={() => download("document")} disabled={busy}><Download size={16} /> {invite.status === "returned" ? "Returned PDF" : "Final PDF"}</button><button type="button" onClick={() => download("certificate")} disabled={busy}><Download size={16} /> Certificate</button></>}
+          {canApprove && invite.status === "returned" && <button type="button" className="primary" onClick={approve} disabled={busy}><CheckCircle2 size={16} /> Approve changes</button>}
+          {canManage && active && <button type="button" className="primary" onClick={resend} disabled={busy}><RefreshCw size={16} /> Resend / new link</button>}
+          {canManage && (invite.status === "sent" || invite.status === "viewed" || invite.status === "expired" || invite.status === "returned") && <button type="button" className="danger" onClick={cancel} disabled={busy}><Ban size={16} /> {invite.status === "returned" ? "Reject & cancel" : "Cancel"}</button>}
+          {canManageRetention && <button type="button" onClick={() => void toggleLegalHold()} disabled={busy}><LockKeyhole size={16} /> {invite.legalHold ? "Release legal hold" : "Apply legal hold"}</button>}
         </div>
       </section>
 
@@ -160,6 +177,7 @@ export default function AdminInvitationDetailPage() {
           <section><h2>Recipient</h2><dl><div><dt>Contact</dt><dd>{invite.data.providerContactName || "—"}</dd></div><div><dt>Email</dt><dd>{invite.recipientEmail || "Link only"}</dd></div><div><dt>Telephone</dt><dd>{invite.data.providerPhone || "—"}</dd></div></dl></section>
           <section><h2>Activity</h2><ol className="admin-timeline">{invite.events.length ? invite.events.map((event) => <li className="done" key={event.eventHash}><strong>{eventLabel(event.eventType)}</strong><span>{formatAdminDate(event.createdAt)}</span></li>) : <li><strong>No audit events recorded</strong><span>Legacy invitation</span></li>}</ol></section>
           <section><h2>Terms</h2><dl><div><dt>Billing</dt><dd>{invite.data.billingTerms}</dd></div><div><dt>Expires</dt><dd>{formatAdminDate(invite.expiresAt)}</dd></div><div><dt>Services</dt><dd>{invite.data.services.length}</dd></div></dl></section>
+          <section><h2>Retention</h2><dl><div><dt>Retain until</dt><dd>{formatAdminDate(invite.retentionExpiresAt)}</dd></div><div><dt>Legal hold</dt><dd>{invite.legalHold ? "Applied — excluded from cleanup" : "Not applied"}</dd></div></dl></section>
           {serviceChanges.length > 0 && <section><h2>Provider term changes</h2><ul className="admin-service-changes">{serviceChanges.map((change) => <li key={change}>{change}</li>)}</ul></section>}
           {invite.status === "declined" && <section><h2>Decline response</h2><p className="admin-detail-note">{invite.declineReason || "No reason provided."}</p></section>}
           {(invite.originalDocumentHash || invite.pdfHash || invite.signatureHash || invite.evidenceHash) && <section><h2>Document integrity</h2><dl className="admin-integrity-list">{invite.originalDocumentHash && <div><dt>Original</dt><dd>{invite.originalDocumentHash}</dd></div>}{invite.pdfHash && <div><dt>Final PDF</dt><dd>{invite.pdfHash}</dd></div>}{invite.signatureHash && <div><dt>Signature</dt><dd>{invite.signatureHash}</dd></div>}{invite.evidenceHash && <div><dt>Evidence</dt><dd>{invite.evidenceHash}</dd></div>}</dl></section>}

@@ -325,6 +325,11 @@ All colors MUST be HSL.
 .admin-header nav a.active { color: #173b70; background: #eaf2fd; }
 .admin-sign-out { display: inline-flex; align-items: center; justify-self: end; gap: 7px; padding: 8px 11px; border: 1px solid #d7e0eb; border-radius: 8px; color: #66758b; background: #fff; font-size: 12px; font-weight: 700; }
 .admin-sign-out:hover { color: #173b70; border-color: #aebed2; }
+.admin-account-actions { display: flex; align-items: center; justify-self: end; gap: 9px; }
+.admin-account-link { display: flex; align-items: center; gap: 7px; color: #33445c; line-height: 1.15; text-decoration: none; }
+.admin-account-link span { display: grid; }
+.admin-account-link strong { font-size: 11px; }
+.admin-account-link small { margin-top: 3px; color: #8490a2; font-size: 9px; font-weight: 800; text-transform: capitalize; }
 
 .admin-main { width: min(1440px, calc(100% - 56px)); margin: 0 auto; padding: 42px 0 72px; }
 .admin-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; margin-bottom: 30px; }
@@ -397,6 +402,7 @@ All colors MUST be HSL.
 .admin-auth-card form { display: grid; }
 .admin-auth-card label { margin-bottom: 7px; color: #34435a; font-size: 11px; font-weight: 800; }
 .admin-auth-card input { height: 43px; padding: 0 12px; border: 1px solid #cfd9e6; border-radius: 8px; outline: 0; font-size: 14px; }
+.admin-auth-card label:not(:first-child) { margin-top: 14px; }
 .admin-auth-card input:focus { border-color: #5790d2; box-shadow: 0 0 0 3px #e8f1fc; }
 .admin-auth-card form button { display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; margin-top: 15px; border: 0; border-radius: 8px; color: #fff; background: #143765; font-size: 12px; font-weight: 800; }
 .admin-auth-card form button:disabled { opacity: .6; }
@@ -469,6 +475,89 @@ All colors MUST be HSL.
 .admin-detail-preview .provider-document-page { transform-origin: top center; }
 .admin-detail-loading { padding: 60px; color: #6d7a8e; text-align: center; }
 
+/* Account administration and governance */
+.admin-role-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-bottom: 22px; }
+.admin-role-grid article { display: flex; align-items: flex-start; gap: 10px; padding: 15px; border: 1px solid #dce4ee; border-radius: 10px; background: #fff; }
+.admin-role-grid svg { flex: 0 0 auto; color: #3972bd; }
+.admin-role-grid strong { display: block; color: #1d2c42; font-size: 11.5px; text-transform: capitalize; }
+.admin-role-grid p { margin: 4px 0 0; color: #748197; font-size: 9.5px; line-height: 1.45; }
+.admin-account-success { display: flex; align-items: center; gap: 7px; margin: 14px 0; padding: 10px 12px; border: 1px solid #b8decf; border-radius: 8px; color: #176544; background: #eefaf5; font-size: 11px; font-weight: 800; }
+.admin-users-grid { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 20px; align-items: start; }
+.admin-user-list select, .admin-password-reset input, .admin-create-user-card input, .admin-create-user-card select, .admin-account-card input, .admin-governance-card input { height: 38px; padding: 0 10px; border: 1px solid #cfd9e6; border-radius: 7px; color: #2d3d54; background: #fff; outline: 0; font-size: 11px; }
+.admin-user-list select:focus, .admin-password-reset input:focus, .admin-create-user-card input:focus, .admin-create-user-card select:focus, .admin-account-card input:focus, .admin-governance-card input:focus { border-color: #5790d2; box-shadow: 0 0 0 3px #e8f1fc; }
+.admin-user-active, .admin-user-disabled { display: inline-flex; align-items: center; gap: 5px; min-height: 29px; padding: 0 8px; border: 1px solid; border-radius: 14px; font-size: 9.5px; font-weight: 800; }
+.admin-user-active { border-color: #b8decf; color: #176544; background: #eefaf5; }
+.admin-user-disabled { border-color: #efc8c6; color: #923a36; background: #fff7f6; }
+.admin-user-active:disabled, .admin-user-disabled:disabled { opacity: .55; }
+.admin-password-reset { display: flex; align-items: center; gap: 6px; min-width: 260px; }
+.admin-password-reset input { min-width: 0; flex: 1; }
+.admin-password-reset button { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 9px; border: 1px solid #cfd9e6; border-radius: 7px; color: #173b70; background: #fff; font-size: 9.5px; font-weight: 800; }
+.admin-create-user-card, .admin-account-card, .admin-governance-card { padding: 22px; border: 1px solid #dce4ee; border-radius: 12px; background: #fff; box-shadow: 0 7px 24px rgba(18,41,76,.05); }
+.admin-create-user-card h2, .admin-account-card h2, .admin-governance-card h2 { margin: 0; color: #102344; font-size: 16px; }
+.admin-create-user-card > p, .admin-account-card p, .admin-governance-card p { margin: 6px 0 18px; color: #748197; font-size: 10.5px; line-height: 1.5; }
+.admin-create-user-card form, .admin-account-card form, .admin-governance-card form { display: grid; gap: 14px; }
+.admin-create-user-card label, .admin-account-card label, .admin-governance-card label { display: grid; gap: 6px; color: #34435a; font-size: 10px; font-weight: 800; }
+.admin-create-user-card label small, .admin-governance-card label small { color: #8490a2; font-size: 8.5px; font-weight: 600; line-height: 1.4; }
+.admin-create-user-card form > button, .admin-account-card form > button, .admin-governance-card button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 0 13px; border: 0; border-radius: 7px; color: #fff; background: #143765; font-size: 10.5px; font-weight: 800; }
+.admin-create-user-card button:disabled, .admin-account-card button:disabled, .admin-governance-card button:disabled { opacity: .55; }
+.admin-account-main { max-width: 900px; }
+.admin-account-card { display: grid; grid-template-columns: auto 1fr; gap: 15px; }
+.admin-account-card > svg { color: #3972bd; }
+.admin-account-card form { max-width: 520px; margin-top: 18px; }
+.admin-account-card .admin-auth-error, .admin-account-card .admin-account-success { margin: 0; }
+.admin-governance-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; margin-bottom: 22px; }
+.admin-governance-card { display: grid; grid-template-columns: auto 1fr; gap: 14px; }
+.admin-governance-card > svg { color: #3972bd; }
+.admin-governance-card form { max-width: 520px; }
+.admin-retention-preview { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
+.admin-retention-preview span { display: grid; padding: 10px; border-radius: 7px; color: #748197; background: #f4f7fa; font-size: 8.5px; text-align: center; }
+.admin-retention-preview strong { color: #173b70; font-size: 17px; }
+.admin-governance-note { margin: 13px 0 0 !important; padding: 10px; border-radius: 7px; background: #f4f7fa; font-size: 9px !important; }
+.admin-security-audit h2 { display: flex; align-items: center; gap: 7px; }
+.admin-security-audit td strong { display: flex; align-items: center; gap: 5px; }
+
+/* Public certificate verification */
+.verification-shell { min-height: 100vh; padding: 48px 24px; color: #17243a; background: radial-gradient(circle at 50% 0%, #e5f0fd 0, transparent 38%), #edf2f7; }
+.verification-card { width: min(850px,100%); margin: 0 auto; overflow: hidden; border: 1px solid #d7e0eb; border-radius: 16px; background: rgba(255,255,255,.98); box-shadow: 0 22px 60px rgba(15,35,68,.14); }
+.verification-card > header { display: flex; align-items: center; gap: 22px; padding: 27px 32px; border-bottom: 1px solid #e1e8f1; }
+.verification-card > header img { width: 108px; height: 43px; object-fit: contain; }
+.verification-card > header > div { padding-left: 22px; border-left: 1px solid #d7e0eb; }
+.verification-card > header p { margin: 0 0 4px; color: #3972bd; font-size: 9px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.verification-card > header h1 { margin: 0; color: #102344; font-family: "Source Serif 4", Georgia, serif; font-size: 25px; }
+.verification-card > form { padding: 28px 32px 24px; }
+.verification-card > form label { display: block; margin-bottom: 7px; color: #34435a; font-size: 10px; font-weight: 800; }
+.verification-card > form > div { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+.verification-card > form input { min-width: 0; height: 43px; padding: 0 12px; border: 1px solid #cfd9e6; border-radius: 8px; outline: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.verification-card > form input:focus { border-color: #5790d2; box-shadow: 0 0 0 3px #e8f1fc; }
+.verification-card > form button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 110px; border: 0; border-radius: 8px; color: #fff; background: #143765; font-size: 11px; font-weight: 800; }
+.verification-error, .verification-result, .verification-empty { margin: 0 32px 28px; border-radius: 10px; }
+.verification-error { display: flex; align-items: flex-start; gap: 10px; padding: 15px; border: 1px solid #efc8c6; color: #923a36; background: #fff7f6; }
+.verification-error strong { font-size: 12px; }
+.verification-error p { margin: 3px 0 0; font-size: 10px; }
+.verification-result { padding: 22px; border: 1px solid; }
+.verification-result.verified { border-color: #b8decf; background: #f3fbf7; }
+.verification-result.pending { border-color: #e8c986; background: #fffaf0; }
+.verification-result-title { display: flex; align-items: center; gap: 12px; }
+.verification-result.verified .verification-result-title { color: #176544; }
+.verification-result.pending .verification-result-title { color: #79500f; }
+.verification-result-title p { margin: 0 0 3px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.verification-result-title h2 { margin: 0; color: #102344; font-family: "Source Serif 4", Georgia, serif; font-size: 22px; }
+.verification-result dl { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin: 20px 0; }
+.verification-result dl div { padding-top: 10px; border-top: 1px solid rgba(99,117,142,.2); }
+.verification-result dt { color: #8490a2; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+.verification-result dd { margin: 3px 0 0; color: #2d3d54; font-size: 10.5px; font-weight: 700; }
+.verification-check-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
+.verification-check-grid span { display: flex; align-items: center; gap: 5px; padding: 7px; border-radius: 6px; color: #8a4e17; background: #fff1d8; font-size: 8.5px; font-weight: 800; text-transform: capitalize; }
+.verification-check-grid span[data-valid="true"] { color: #176544; background: #dff2e8; }
+.verification-hashes { display: grid; gap: 8px; margin-top: 18px; }
+.verification-hashes p { overflow-wrap: anywhere; margin: 0; color: #657389; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; line-height: 1.5; }
+.verification-hashes strong { display: block; color: #34435a; font-family: "DM Sans", sans-serif; font-size: 8px; text-transform: uppercase; }
+.verification-empty { display: grid; justify-items: center; padding: 38px; color: #8591a3; background: #f7f9fb; text-align: center; }
+.verification-empty p { margin: 10px 0 4px; color: #34435a; font-size: 11px; font-weight: 800; }
+.verification-empty span { font-size: 9.5px; }
+.verification-card > footer { display: flex; align-items: center; justify-content: space-between; padding: 17px 32px; border-top: 1px solid #e1e8f1; color: #8591a3; background: #fafbfd; font-size: 9.5px; font-weight: 700; }
+.verification-card > footer a { display: inline-flex; align-items: center; gap: 4px; color: #3972bd; text-decoration: none; }
+
 @media (max-width: 1050px) {
   .provider-invite-layout { grid-template-columns: 1fr; }
   .provider-invite-editor { position: static; max-height: none; }
@@ -481,6 +570,8 @@ All colors MUST be HSL.
   .admin-header nav { justify-self: center; }
   .admin-main { width: min(100% - 36px, 1440px); }
   .admin-detail-grid { grid-template-columns: 260px minmax(0,1fr); }
+  .admin-role-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .admin-users-grid { grid-template-columns: 1fr; }
 }
 
 @media print {

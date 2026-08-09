@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAdminUser } from "@/components/admin/adminAuth";
 import { adminDocumentLabel, formatAdminDate, invitationStatusLabel } from "@/lib/adminInvitations";
 import { apiListAdminInvitations } from "@/lib/backend";
 import type { AdminInvitationList, ProviderInvitationStatus } from "@/types/memo";
@@ -32,6 +33,8 @@ const filters: Array<{ value: ProviderInvitationStatus | "all"; label: string }>
 ];
 
 export default function AdminDashboardPage() {
+  const user = useAdminUser();
+  const canCreate = user.permissions.includes("create_documents");
   const [result, setResult] = useState<AdminInvitationList>({ items: [], counts: EMPTY_COUNTS });
   const [filter, setFilter] = useState<ProviderInvitationStatus | "all">("all");
   const [search, setSearch] = useState("");
@@ -65,10 +68,10 @@ export default function AdminDashboardPage() {
           <h1>Invitations and responses</h1>
           <p>Create provider documents, monitor when they are opened, and download completed agreements.</p>
         </div>
-        <div className="admin-create-actions">
+        {canCreate && <div className="admin-create-actions">
           <Link to="/admin/documents/new/fee-proposal" className="admin-primary-action"><FilePlus2 size={18} /> New fee proposal</Link>
           <Link to="/admin/documents/new/service-agreement" className="admin-secondary-action"><FileSignature size={18} /> New service agreement</Link>
-        </div>
+        </div>}
       </section>
 
       <section className="admin-stat-grid" aria-label="Invitation totals">
@@ -105,7 +108,7 @@ export default function AdminDashboardPage() {
             <FileText size={28} />
             <h3>{search || filter !== "all" ? "No matching invitations" : "No invitations yet"}</h3>
             <p>{search || filter !== "all" ? "Change the search or status filter." : "Create the first provider fee proposal or service agreement."}</p>
-            {!search && filter === "all" && <Link to="/admin/documents/new/fee-proposal">Create a fee proposal <ArrowRight size={15} /></Link>}
+            {!search && filter === "all" && canCreate && <Link to="/admin/documents/new/fee-proposal">Create a fee proposal <ArrowRight size={15} /></Link>}
           </div>
         ) : null}
 

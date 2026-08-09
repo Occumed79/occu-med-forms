@@ -113,6 +113,8 @@ export interface AdminInvitationSummary {
   approvedAt?: string;
   declinedAt?: string;
   declineReason?: string;
+  legalHold: boolean;
+  retentionExpiresAt?: string;
   hasCompletedDocument: boolean;
 }
 
@@ -150,4 +152,69 @@ export interface AdminInvitationDetail extends AdminInvitationSummary {
 export interface AdminInvitationList {
   items: AdminInvitationSummary[];
   counts: Record<ProviderInvitationStatus | "all", number>;
+}
+
+export type AdminRole = "owner" | "manager" | "sender" | "auditor";
+export type AdminPermission =
+  | "view_documents"
+  | "create_documents"
+  | "manage_invitations"
+  | "approve_terms"
+  | "download_documents"
+  | "manage_users"
+  | "manage_retention"
+  | "export_backups"
+  | "view_security_audit";
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  displayName: string;
+  role: AdminRole;
+  permissions: AdminPermission[];
+  active: boolean;
+  lastLoginAt?: string;
+  createdAt: string;
+}
+
+export interface AuthAuditEvent {
+  eventType: string;
+  details: Record<string, unknown>;
+  email?: string;
+  actorEmail?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+export interface RetentionPolicy {
+  completedDocumentDays: number;
+  inactiveInvitationDays: number;
+  authAuditDays: number;
+  updatedAt: string;
+  preview: {
+    completedEligible: number;
+    inactiveEligible: number;
+    legalHolds: number;
+  };
+}
+
+export interface CertificateVerification {
+  verified: boolean;
+  status: ProviderInvitationStatus;
+  documentType: ProviderDocumentType;
+  documentNumber: string;
+  providerName: string;
+  signerName: string;
+  signatureType: "typed" | "drawn";
+  signedAt: string;
+  approvedAt?: string;
+  finalPdfHash: string;
+  evidenceHash: string;
+  checks: {
+    originalDocument: boolean | null;
+    finalPdf: boolean | null;
+    signatureEvidence: boolean | null;
+    auditChain: boolean;
+  };
 }

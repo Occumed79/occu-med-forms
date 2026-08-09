@@ -5,7 +5,8 @@ import logo from "@/assets/occu-med-logo.png";
 import { apiAdminLogin, setAdminSessionToken } from "@/lib/backend";
 
 export default function AdminLoginPage() {
-  const [accessCode, setAccessCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -13,11 +14,11 @@ export default function AdminLoginPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!accessCode.trim()) return;
+    if (!email.trim() || !password) return;
     setBusy(true);
     setError("");
     try {
-      const session = await apiAdminLogin(accessCode.trim());
+      const session = await apiAdminLogin(email.trim(), password);
       setAdminSessionToken(session.token);
       const from = (location.state as { from?: string } | null)?.from || "/admin";
       navigate(from, { replace: true });
@@ -35,20 +36,22 @@ export default function AdminLoginPage() {
         <div className="admin-auth-icon"><LockKeyhole size={22} /></div>
         <p className="admin-eyebrow">Internal access</p>
         <h1>Provider document workspace</h1>
-        <p>Enter the Occu-Med admin access code to create invitations and review provider responses.</p>
+        <p>Sign in with your individual Occu-Med account to create invitations or review provider responses.</p>
         <form onSubmit={submit}>
-          <label htmlFor="admin-access-code">Admin access code</label>
+          <label htmlFor="admin-email">Email address</label>
           <input
-            id="admin-access-code"
-            type="password"
-            autoComplete="current-password"
-            value={accessCode}
-            onChange={(event) => setAccessCode(event.target.value)}
+            id="admin-email"
+            type="email"
+            autoComplete="username"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             autoFocus
           />
+          <label htmlFor="admin-password">Password</label>
+          <input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
           {error && <div className="admin-auth-error" role="alert">{error}</div>}
-          <button type="submit" disabled={busy || !accessCode.trim()}>
-            {busy ? "Checking…" : "Open workspace"} <ArrowRight size={17} />
+          <button type="submit" disabled={busy || !email.trim() || !password}>
+            {busy ? "Signing in…" : "Open workspace"} <ArrowRight size={17} />
           </button>
         </form>
       </section>

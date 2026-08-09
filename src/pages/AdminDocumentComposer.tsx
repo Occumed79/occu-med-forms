@@ -2,9 +2,12 @@ import { ArrowLeft, FileSignature, FileText } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ProviderDocumentForm } from "@/components/memo/ProviderDocumentForm";
 import type { ProviderDocumentType } from "@/types/memo";
+import { useAdminPermission } from "@/components/admin/adminAuth";
 
 export default function AdminDocumentComposerPage() {
+  const canCreate = useAdminPermission("create_documents");
   const { documentType } = useParams();
+  if (!canCreate) return <Navigate to="/admin" replace />;
   if (documentType !== "fee-proposal" && documentType !== "service-agreement") return <Navigate to="/admin" replace />;
   const type = documentType as ProviderDocumentType;
   const proposal = type === "fee-proposal";
