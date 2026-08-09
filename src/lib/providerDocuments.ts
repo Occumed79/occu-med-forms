@@ -19,6 +19,9 @@ export const SERVICE_AGREEMENT_SECTIONS = [
   },
 ] as const;
 
+export const ELECTRONIC_RECORD_CONSENT_TEXT =
+  "I agree to use electronic records and electronic signatures for this document and understand that my electronic signature has the same legal effect as a handwritten signature.";
+
 let rowCounter = 0;
 
 export function createProviderServiceRow(
@@ -56,8 +59,11 @@ export function createProviderDocumentData(documentType: ProviderDocumentType): 
     notes: "",
     providerSignerName: "",
     providerSignerTitle: "",
+    providerSignatureType: "typed",
+    providerSignatureData: "",
     providerSignedDate: "",
     agreedElectronic: false,
+    electronicConsentText: ELECTRONIC_RECORD_CONSENT_TEXT,
   };
 }
 
@@ -81,6 +87,9 @@ export function validateProviderDocument(
   if (options.requireProviderSignature) {
     if (!data.providerSignerName.trim()) errors.push("Provider signer name is required.");
     if (!data.providerSignerTitle.trim()) errors.push("Provider signer title is required.");
+    if (data.providerSignatureType === "drawn" && !data.providerSignatureData.startsWith("data:image/png;base64,")) {
+      errors.push("Draw your signature before completing the document.");
+    }
     if (!data.agreedElectronic) errors.push("Electronic signature consent is required.");
   }
   return errors;

@@ -3,6 +3,7 @@ import {
   createProviderDocumentData,
   createProviderServiceRow,
   documentTitle,
+  ELECTRONIC_RECORD_CONSENT_TEXT,
   validateProviderDocument,
 } from "@/lib/providerDocuments";
 import { adminDocumentLabel, invitationStatusLabel } from "@/lib/adminInvitations";
@@ -15,6 +16,8 @@ describe("provider document workflow", () => {
     expect(proposal.documentType).toBe("fee-proposal");
     expect(proposal.documentNumber).toMatch(/^OM-FP-/);
     expect(proposal.billingTerms).toBe("Net 30");
+    expect(proposal.providerSignatureType).toBe("typed");
+    expect(proposal.electronicConsentText).toBe(ELECTRONIC_RECORD_CONSENT_TEXT);
     expect(agreement.documentNumber).toMatch(/^OM-PSA-/);
     expect(documentTitle(agreement.documentType)).toBe("Provider Service Agreement");
   });
@@ -56,7 +59,25 @@ describe("provider document workflow", () => {
   it("uses sender-facing labels for provider invitation records", () => {
     expect(adminDocumentLabel("fee-proposal")).toBe("Fee Proposal");
     expect(adminDocumentLabel("service-agreement")).toBe("Service Agreement");
+    expect(invitationStatusLabel("returned")).toBe("Needs review");
     expect(invitationStatusLabel("viewed")).toBe("Opened");
     expect(invitationStatusLabel("cancelled")).toBe("Cancelled");
+    expect(invitationStatusLabel("declined")).toBe("Declined");
+  });
+
+  it("requires signature ink when the provider chooses a drawn signature", () => {
+    const data = createProviderDocumentData("service-agreement");
+    data.providerName = "Example Occupational Health";
+    data.services = [createProviderServiceRow("Physical Exam", "$125.00")];
+    data.providerSignerName = "Jordan Provider";
+    data.providerSignerTitle = "Practice Manager";
+    data.providerSignatureType = "drawn";
+    data.agreedElectronic = true;
+
+    expect(validateProviderDocument(data, { requireProviderSignature: true })).toContain(
+      "Draw your signature before completing the document.",
+    );
+    data.providerSignatureData = "data:image/png;base64,c2lnbmF0dXJl";
+    expect(validateProviderDocument(data, { requireProviderSignature: true })).toEqual([]);
   });
 });

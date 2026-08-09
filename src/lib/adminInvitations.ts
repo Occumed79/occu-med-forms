@@ -3,7 +3,9 @@ import type { ProviderDocumentType, ProviderInvitationStatus } from "@/types/mem
 export const ADMIN_STATUS_LABELS: Record<ProviderInvitationStatus, string> = {
   sent: "Sent",
   viewed: "Opened",
+  returned: "Needs review",
   completed: "Completed",
+  declined: "Declined",
   expired: "Expired",
   cancelled: "Cancelled",
 };

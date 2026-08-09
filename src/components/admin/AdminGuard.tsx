@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { apiAdminSession, getAdminAccessKey, setAdminAccessKey } from "@/lib/backend";
+import { apiAdminSession, getAdminSessionToken, setAdminSessionToken } from "@/lib/backend";
 
 export function AdminGuard() {
   const location = useLocation();
   const [state, setState] = useState<"checking" | "allowed" | "denied">(
-    getAdminAccessKey() ? "checking" : "denied",
+    getAdminSessionToken() ? "checking" : "denied",
   );
 
   useEffect(() => {
-    if (!getAdminAccessKey()) return;
+    if (!getAdminSessionToken()) return;
     let active = true;
     apiAdminSession()
       .then(() => { if (active) setState("allowed"); })
       .catch(() => {
-        setAdminAccessKey("");
+        setAdminSessionToken("");
         if (active) setState("denied");
       });
     return () => { active = false; };

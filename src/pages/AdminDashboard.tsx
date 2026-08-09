@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
+  AlertTriangle,
   CheckCircle2,
   Clock3,
-  Eye,
   FilePlus2,
   FileSignature,
   FileText,
@@ -17,14 +17,16 @@ import { apiListAdminInvitations } from "@/lib/backend";
 import type { AdminInvitationList, ProviderInvitationStatus } from "@/types/memo";
 
 const EMPTY_COUNTS: AdminInvitationList["counts"] = {
-  all: 0, sent: 0, viewed: 0, completed: 0, expired: 0, cancelled: 0,
+  all: 0, sent: 0, viewed: 0, returned: 0, completed: 0, declined: 0, expired: 0, cancelled: 0,
 };
 
 const filters: Array<{ value: ProviderInvitationStatus | "all"; label: string }> = [
   { value: "all", label: "All" },
   { value: "sent", label: "Sent" },
   { value: "viewed", label: "Opened" },
+  { value: "returned", label: "Needs review" },
   { value: "completed", label: "Completed" },
+  { value: "declined", label: "Declined" },
   { value: "expired", label: "Expired" },
   { value: "cancelled", label: "Cancelled" },
 ];
@@ -72,7 +74,7 @@ export default function AdminDashboardPage() {
       <section className="admin-stat-grid" aria-label="Invitation totals">
         <article><span className="admin-stat-icon blue"><Inbox size={19} /></span><div><small>Total invitations</small><strong>{result.counts.all}</strong></div></article>
         <article><span className="admin-stat-icon amber"><Clock3 size={19} /></span><div><small>Awaiting response</small><strong>{activeCount}</strong></div></article>
-        <article><span className="admin-stat-icon purple"><Eye size={19} /></span><div><small>Opened</small><strong>{result.counts.viewed}</strong></div></article>
+        <article><span className="admin-stat-icon purple"><AlertTriangle size={19} /></span><div><small>Needs review</small><strong>{result.counts.returned}</strong></div></article>
         <article><span className="admin-stat-icon green"><CheckCircle2 size={19} /></span><div><small>Completed</small><strong>{result.counts.completed}</strong></div></article>
       </section>
 

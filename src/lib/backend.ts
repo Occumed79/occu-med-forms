@@ -13,19 +13,19 @@ function url(path: string) {
   return `${API_BASE}${path}`;
 }
 
-const ADMIN_KEY_STORAGE = "occu-med-admin-access";
+const ADMIN_SESSION_STORAGE = "occu-med-admin-session";
 
-export function getAdminAccessKey() {
-  return sessionStorage.getItem(ADMIN_KEY_STORAGE) || "";
+export function getAdminSessionToken() {
+  return sessionStorage.getItem(ADMIN_SESSION_STORAGE) || "";
 }
 
-export function setAdminAccessKey(key: string) {
-  if (key) sessionStorage.setItem(ADMIN_KEY_STORAGE, key);
-  else sessionStorage.removeItem(ADMIN_KEY_STORAGE);
+export function setAdminSessionToken(token: string) {
+  if (token) sessionStorage.setItem(ADMIN_SESSION_STORAGE, token);
+  else sessionStorage.removeItem(ADMIN_SESSION_STORAGE);
 }
 
 function adminHeaders(extra: Record<string, string> = {}) {
-  return { ...extra, "X-Admin-Key": getAdminAccessKey() };
+  return { ...extra, Authorization: `Bearer ${getAdminSessionToken()}` };
 }
 
 async function responseError(res: Response) {
@@ -38,10 +38,26 @@ async function responseError(res: Response) {
   }
 }
 
-export async function apiAdminSession(accessKey?: string) {
+export async function apiAdminLogin(accessCode: string) {
   const res = await fetch(url("/api/admin/session"), {
-    headers: { "X-Admin-Key": accessKey ?? getAdminAccessKey() },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accessCode }),
   });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true; token: string; expiresAt: string; idleMinutes: number }>;
+}
+
+export async function apiAdminSession() {
+  const res = await fetch(url("/api/admin/session"), {
+    headers: adminHeaders(),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true; idleMinutes: number }>;
+}
+
+export async function apiAdminLogout() {
+  const res = await fetch(url("/api/admin/logout"), { method: "POST", headers: adminHeaders() });
   if (!res.ok) throw new Error(await responseError(res));
   return res.json() as Promise<{ ok: true }>;
 }
@@ -157,6 +173,15 @@ export async function apiCancelAdminInvitation(id: string) {
   return res.json() as Promise<{ ok: true; status: "cancelled" }>;
 }
 
+export async function apiApproveAdminInvitation(id: string) {
+  const res = await fetch(url(`/api/admin/provider-invitations/${encodeURIComponent(id)}/approve`), {
+    method: "POST",
+    headers: adminHeaders(),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true; status: "completed"; approvedAt: string; emailSent: boolean }>;
+}
+
 export async function apiDownloadAdminInvitationFile(id: string, kind: "document" | "certificate") {
   const res = await fetch(url(`/api/admin/provider-invitations/${encodeURIComponent(id)}/${kind}`), { headers: adminHeaders() });
   if (!res.ok) throw new Error(await responseError(res));
@@ -181,10 +206,29 @@ export async function apiFinalizeProviderInvitation(
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{
     ok: boolean;
+    status: "returned" | "completed";
+    requiresReview: boolean;
     completedAt: string;
     pdfHash: string;
+    evidenceHash: string;
     pdfBase64: string;
     certificateBase64: string;
     emailSent: boolean;
   }>;
+}
+
+export async function apiDeclineProviderInvitation(token: string, reason: string) {
+  const res = await fetch(url(`/api/provider-invitations/${encodeURIComponent(token)}/decline`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason }),
+  });
+  if (!res.ok) throw new Error(await responseError(res));
+  return res.json() as Promise<{ ok: true; status: "declined"; declinedAt: string }>;
+}
+
+export async function apiDownloadProviderInvitationFile(token: string, kind: "document" | "certificate") {
+  const res = await fetch(url(`/api/provider-invitations/${encodeURIComponent(token)}/${kind}`));
+  if (!res.ok) throw new Error(await responseError(res));
+  return new Uint8Array(await res.arrayBuffer());
 }

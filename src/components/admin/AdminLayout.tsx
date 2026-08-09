@@ -1,12 +1,13 @@
 import { FilePlus2, Files, LayoutDashboard, LogOut } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import logo from "@/assets/occu-med-logo.png";
-import { setAdminAccessKey } from "@/lib/backend";
+import { apiAdminLogout, setAdminSessionToken } from "@/lib/backend";
 
 export function AdminLayout() {
   const navigate = useNavigate();
-  const signOut = () => {
-    setAdminAccessKey("");
+  const signOut = async () => {
+    try { await apiAdminLogout(); } catch { /* the local session is still cleared */ }
+    setAdminSessionToken("");
     navigate("/admin/login", { replace: true });
   };
 
@@ -22,7 +23,7 @@ export function AdminLayout() {
           <NavLink to="/admin/documents/new/fee-proposal"><FilePlus2 size={17} /> New document</NavLink>
           <NavLink to="/admin/forms"><Files size={17} /> Other forms</NavLink>
         </nav>
-        <button type="button" className="admin-sign-out" onClick={signOut}><LogOut size={16} /> Lock</button>
+        <button type="button" className="admin-sign-out" onClick={() => void signOut()}><LogOut size={16} /> Lock</button>
       </header>
       <Outlet />
     </div>

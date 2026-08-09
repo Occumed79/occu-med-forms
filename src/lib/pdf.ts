@@ -276,7 +276,7 @@ export async function generateSignedClinicPdf(
   d: SignedClinicMemoData,
   envelopeId: string,
 ): Promise<Uint8Array> {
-  const { doc, pageW, pageH } = await buildBasePdf("Network Management Provider Pricing Sheet", "navy");
+  const { doc, pageW, pageH } = await buildBasePdf("Provider Service Agreement", "navy");
   let y = 40;
   y = drawFieldsGrid(doc, [
     { label: "Network Management Analyst", value: d.analystName },

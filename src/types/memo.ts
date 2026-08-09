@@ -76,8 +76,11 @@ export interface ProviderDocumentData {
   notes: string;
   providerSignerName: string;
   providerSignerTitle: string;
+  providerSignatureType: "typed" | "drawn";
+  providerSignatureData: string;
   providerSignedDate: string;
   agreedElectronic: boolean;
+  electronicConsentText: string;
 }
 
 export interface ProviderInvitation {
@@ -87,9 +90,14 @@ export interface ProviderInvitation {
   createdAt: string;
   expiresAt: string;
   completedAt?: string;
+  approvedAt?: string;
+  declinedAt?: string;
+  declineReason?: string;
+  originalDocumentHash?: string;
+  electronicRecordConsentText?: string;
 }
 
-export type ProviderInvitationStatus = "sent" | "viewed" | "completed" | "expired" | "cancelled";
+export type ProviderInvitationStatus = "sent" | "viewed" | "returned" | "completed" | "declined" | "expired" | "cancelled";
 
 export interface AdminInvitationSummary {
   id: string;
@@ -102,12 +110,41 @@ export interface AdminInvitationSummary {
   expiresAt: string;
   viewedAt?: string;
   completedAt?: string;
+  approvedAt?: string;
+  declinedAt?: string;
+  declineReason?: string;
   hasCompletedDocument: boolean;
+}
+
+export interface InvitationEvidenceVerification {
+  valid: boolean;
+  originalDocumentHashValid: boolean | null;
+  finalPdfHashValid: boolean | null;
+  evidenceHashValid: boolean | null;
+  auditChainValid: boolean;
+}
+
+export interface ProviderInvitationEvent {
+  eventType: string;
+  details: Record<string, unknown>;
+  ipAddress?: string;
+  userAgent?: string;
+  previousHash?: string;
+  eventHash: string;
+  createdAt: string;
 }
 
 export interface AdminInvitationDetail extends AdminInvitationSummary {
   data: ProviderDocumentData;
+  originalData: ProviderDocumentData;
   pdfHash?: string;
+  originalDocumentHash?: string;
+  evidenceHash?: string;
+  signatureHash?: string;
+  signatureType?: "typed" | "drawn";
+  consentText?: string;
+  verification: InvitationEvidenceVerification;
+  events: ProviderInvitationEvent[];
 }
 
 export interface AdminInvitationList {

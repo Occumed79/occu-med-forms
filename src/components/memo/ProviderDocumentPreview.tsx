@@ -148,9 +148,14 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
                   </div>
                   <div>
                     <span>Provider acceptance</span>
-                    <strong className={data.providerSignerName ? "signature-name" : ""}>
-                      {data.providerSignerName || "Pending provider signature"}
-                    </strong>
+                    {data.providerSignatureType === "drawn" && data.providerSignatureData ? (
+                      <img className="provider-drawn-signature" src={data.providerSignatureData} alt={`Signature of ${data.providerSignerName}`} />
+                    ) : (
+                      <strong className={data.providerSignerName ? "signature-name" : ""}>
+                        {data.providerSignerName || "Pending provider signature"}
+                      </strong>
+                    )}
+                    {data.providerSignatureType === "drawn" && data.providerSignerName && <p>{data.providerSignerName}</p>}
                     <p>{data.providerSignerTitle || "Title"}</p>
                     <p>{formatDate(data.providerSignedDate)}</p>
                   </div>

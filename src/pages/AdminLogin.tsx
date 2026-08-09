@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/occu-med-logo.png";
-import { apiAdminSession, setAdminAccessKey } from "@/lib/backend";
+import { apiAdminLogin, setAdminSessionToken } from "@/lib/backend";
 
 export default function AdminLoginPage() {
   const [accessCode, setAccessCode] = useState("");
@@ -17,8 +17,8 @@ export default function AdminLoginPage() {
     setBusy(true);
     setError("");
     try {
-      await apiAdminSession(accessCode.trim());
-      setAdminAccessKey(accessCode.trim());
+      const session = await apiAdminLogin(accessCode.trim());
+      setAdminSessionToken(session.token);
       const from = (location.state as { from?: string } | null)?.from || "/admin";
       navigate(from, { replace: true });
     } catch (requestError) {

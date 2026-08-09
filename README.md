@@ -25,8 +25,11 @@ Provider Fee Proposals and Provider Service Agreements use a provider-invitation
 2. The app creates a cryptographically random, document-specific provider URL.
 3. The provider URL renders only the invited document—there is no internal form switcher.
 4. The provider can remove unavailable services, add requested services, enter fees, complete contact information, and sign electronically.
-5. The exact on-screen preview becomes the final PDF. The backend stores the completed bytes, SHA-256 hash, timestamps, client metadata, and audit certificate.
-6. When email is configured, the backend emails the invitation and returns the completed document to the configured Occu-Med mailbox, with a copy to the provider.
+5. The exact on-screen preview becomes the signed PDF. The backend stores the completed bytes, SHA-256 hash, timestamps, client metadata, signature evidence, and audit certificate.
+6. If the provider changes a service or fee, the document enters **Needs review** instead of silently becoming final. Occu-Med sees an original-versus-returned change summary and must approve or reject it.
+7. When email is configured, unchanged completions are returned to Occu-Med and the provider. Changed terms go only to the configured Occu-Med review mailbox until approval; approval then releases the final document and certificate.
+
+The signature evidence model is adapted from Occu-Med's PacketPath/DocuSign Replacement project: 48-byte recipient tokens, short-lived admin sessions, typed or drawn signatures, explicit electronic-record consent, canonical evidence hashes, chained audit events, decline handling, and independent verification of the original payload, final PDF, signature evidence, and audit chain.
 
 ## Responsibility split
 
@@ -58,9 +61,16 @@ Provider Fee Proposals and Provider Service Agreements use a provider-invitation
 - `POST /api/provider-invitations` → create provider-only invitation
 - `GET /api/provider-invitations/:token` → load and log provider review
 - `POST /api/provider-invitations/:token/finalize` → validate, hash, store, certify, and return the completed PDF
+- `POST /api/provider-invitations/:token/decline` → record a provider decline and optional reason
+- `GET /api/provider-invitations/:token/document` → download the authoritative completed PDF
+- `GET /api/provider-invitations/:token/certificate` → download the authoritative completion certificate
+- `POST /api/admin/session` → exchange the admin access code for a revocable session token
+- `GET /api/admin/session` → validate and refresh an active admin session
+- `POST /api/admin/logout` → revoke the active admin session
 - `GET /api/admin/provider-invitations` → list and filter invitation activity
 - `GET /api/admin/provider-invitations/:id` → inspect an invitation
 - `POST /api/admin/provider-invitations/:id/resend` → rotate and resend a secure provider link
+- `POST /api/admin/provider-invitations/:id/approve` → approve returned service or fee changes and finalize the agreement
 - `POST /api/admin/provider-invitations/:id/cancel` → invalidate an active invitation
 - `GET /api/admin/provider-invitations/:id/document` → download the completed PDF
 - `GET /api/admin/provider-invitations/:id/certificate` → download its audit certificate
@@ -118,6 +128,8 @@ This repo includes `render.yaml` with **two services**.
 Required backend env vars:
 - `DATABASE_URL` (Neon pooled connection string)
 - `ADMIN_ACCESS_KEY` (private access code used to open the internal sender workspace)
+- `ADMIN_SESSION_HOURS` (optional; default `8`)
+- `ADMIN_IDLE_MINUTES` (optional; default `30`)
 - `FRONTEND_ORIGIN` (the deployed frontend origin used for CORS)
 - `FRONTEND_APP_URL` (the deployed frontend URL used in provider invitation emails)
 - `NODE_ENV` (set to `production` on Render)
