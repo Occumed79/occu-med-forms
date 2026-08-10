@@ -145,8 +145,9 @@ All colors MUST be HSL.
 .provider-document-header h2 {
   margin: 0;
   font-family: "Source Serif 4", Georgia, serif;
-  font-size: 20pt;
+  font-size: 21pt;
   line-height: 1.05;
+  white-space: nowrap;
 }
 
 .provider-document-number {
@@ -234,8 +235,11 @@ All colors MUST be HSL.
 .provider-document-notes { padding: 3mm 4mm; background: #f7f9fc; border: 0.25mm solid #dfe6ef; }
 .provider-document-notes strong, .provider-document-terms strong { color: #0d1f3c; }
 .provider-document-notes p, .provider-document-terms p { margin: 1mm 0 0; white-space: pre-wrap; }
-.provider-document-terms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
-.provider-document-terms > div { padding: 3mm; border: 0.25mm solid #dfe6ef; border-radius: 1.5mm; }
+.provider-document-terms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+.provider-document-terms > div { position: relative; padding: 3mm 3mm 3mm 9mm; border: 0.25mm solid #d7e2ef; border-radius: 1.5mm; background: #f8fbff; }
+.provider-document-terms > div > span { position: absolute; top: 3mm; left: 3mm; display: grid; place-items: center; width: 4.5mm; height: 4.5mm; border-radius: 50%; color: #fff; background: #2868b2; font-size: 6.5pt; font-weight: 800; }
+.provider-document-terms-top { margin: 4mm 0 5mm; }
+.provider-document-terms-top p { font-size: 6.65pt; line-height: 1.35; }
 
 .provider-document-signature {
   display: grid;
@@ -254,6 +258,28 @@ All colors MUST be HSL.
 .provider-document-signature .signature-name { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 16pt; }
 .provider-drawn-signature { display: block; width: 48mm; height: 10mm; margin: -1mm 0 .5mm; object-fit: contain; object-position: left center; }
 .provider-document-signature p { margin: 0.5mm 0; font-size: 7.8pt; }
+
+.occu-med-signature { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: #fff; background: #0d1f3c; }
+.occu-med-signature svg { width: 48px; height: 48px; flex: 0 0 auto; }
+.occu-med-signature svg text { fill: currentColor; stroke: none; font-size: 8px; font-weight: 900; letter-spacing: -.5px; }
+.occu-med-signature div strong { min-height: 0; color: inherit; font-size: 11px; letter-spacing: .08em; }
+.occu-med-signature div span { margin: 2px 0 0; color: inherit; font-size: 7px; letter-spacing: .05em; opacity: .72; }
+.occu-med-signature.compact { width: 55mm; margin: -1mm 0 1mm; padding: 1.5mm 2mm; border-radius: 1.5mm; }
+.occu-med-signature.compact svg { width: 10mm; height: 10mm; }
+
+.document-package-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.document-package-options label { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border: 1px solid hsl(var(--memo-border)); border-radius: 9px; background: #fff; cursor: pointer; transition: .15s ease; }
+.document-package-options label.selected { border-color: #397dca; background: #f0f7ff; box-shadow: 0 0 0 2px rgba(57,125,202,.1); }
+.document-package-options input { margin-top: 3px; accent-color: #245f9f; }
+.document-package-options svg { flex: 0 0 auto; color: #245f9f; }
+.document-package-options strong, .document-package-options small { display: block; }
+.document-package-options small { margin-top: 3px; color: #64748b; font-size: 11px; line-height: 1.35; }
+
+.attachment-intro { margin-bottom: 6mm; padding: 3mm 4mm; border-left: 1mm solid #3c82dc; background: #f3f7fc; font-size: 8pt; }
+.attachment-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 6mm; }
+.attachment-fields > div { min-height: 10mm; padding-bottom: 2mm; border-bottom: .25mm solid #dce5ef; }
+.attachment-fields span { display: block; margin-bottom: 1.5mm; color: #5d6c80; font-size: 6.5pt; font-weight: 800; text-transform: uppercase; }
+.attachment-fields strong { display: block; color: #182638; font-size: 8pt; line-height: 1.35; overflow-wrap: anywhere; }
 
 .provider-document-page footer {
   position: absolute;
@@ -777,7 +803,7 @@ All colors MUST be HSL.
 
   .header-title {
     font-family: "Source Serif 4", serif;
-    font-size: 26px;
+    font-size: 32px;
     font-weight: 600;
     letter-spacing: 0.01em;
     color: #fff;

@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import type { PriceRow, SignedClinicMemoData } from "@/types/memo";
 import { occuMedContactSheetAttachment, providerContactSheetAttachment } from "@/lib/contactSheetAttachments";
+import { OccuMedSignature } from "@/components/signatures/OccuMedSignature";
 
 const initial: SignedClinicMemoData = {
   analystName: "",
@@ -223,7 +224,7 @@ export const SignedClinicMemoForm = () => {
       <ComponentSidebar onAdd={(c) => addComponent(c.name)} />
 
       <div ref={formRef} className="form-card flex-1" style={{ maxWidth: "none" }}>
-        <NavyHeader title="Occu-Med, LTD\nProvider Service Agreement" />
+        <NavyHeader title="Legacy Signed Pricing Agreement" />
         <div className="form-body">
           {backendWarning && (
             <div
@@ -314,17 +315,7 @@ export const SignedClinicMemoForm = () => {
               <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2">
                 Occu-Med Representative
               </div>
-              <div className="flex items-center gap-3 mb-3 p-3 rounded bg-[hsl(var(--navy-deep))] text-white">
-                <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  {[3, 5, 7, 9, 11, 13, 15, 17].map((r) => (
-                    <circle key={r} cx="22" cy="22" r={r} fill="none" />
-                  ))}
-                </svg>
-                <div className="text-xs">
-                  <div className="font-bold tracking-wide">OCCU-MED</div>
-                  <div className="opacity-70">Verified Electronic Signature</div>
-                </div>
-              </div>
+              <div className="mb-3"><OccuMedSignature /></div>
               <div className="grid grid-cols-1 gap-2">
                 <Select value={data.occuMedRepTitle} onChange={(e) => set("occuMedRepTitle", e.target.value)}>
                   <option>Network Management Analyst</option>

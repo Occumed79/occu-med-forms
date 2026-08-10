@@ -81,6 +81,7 @@ export interface ProviderDocumentData {
   providerSignedDate: string;
   agreedElectronic: boolean;
   electronicConsentText: string;
+  attachments: Array<"occu-contact-sheet" | "provider-contact-sheet">;
 }
 
 export interface ProviderInvitation {

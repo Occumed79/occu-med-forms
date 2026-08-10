@@ -10,7 +10,7 @@ const HeaderTitle = ({ title }: Props) => {
   return (
     <div
       className="header-title"
-      style={isContactInformation ? { fontSize: "34px" } : undefined}
+      style={isContactInformation ? { fontSize: "38px" } : undefined}
     >
       {title.split("\n").map((line, index) => (
         <span key={`${line}-${index}`} className="block">
