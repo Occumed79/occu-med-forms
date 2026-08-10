@@ -54,13 +54,15 @@ function drawHeaderStrip(
   }
   // Dark overlay for legibility
   doc.setFillColor(9, 14, 26);
-  doc.setGState(new (doc as any).GState({ opacity: 0.35 }));
+  doc.setGState(doc.GState({ opacity: 0.35 }));
   doc.rect(0, 0, pageW, height, "F");
-  doc.setGState(new (doc as any).GState({ opacity: 1 }));
+  doc.setGState(doc.GState({ opacity: 1 }));
   // Logo (white)
   try {
     doc.addImage(logoData, "PNG", 14, 8, 28, 16);
-  } catch {}
+  } catch {
+    // The title remains usable if the optional logo cannot be embedded.
+  }
   // Title
   const titleLines = title.split("\n").filter(Boolean);
   const multiline = titleLines.length > 1;
@@ -274,7 +276,7 @@ export async function generateSignedClinicPdf(
   d: SignedClinicMemoData,
   envelopeId: string,
 ): Promise<Uint8Array> {
-  const { doc, pageW, pageH } = await buildBasePdf("Network Management Provider Pricing Sheet", "navy");
+  const { doc, pageW, pageH } = await buildBasePdf("Provider Service Agreement", "navy");
   let y = 40;
   y = drawFieldsGrid(doc, [
     { label: "Network Management Analyst", value: d.analystName },
@@ -482,7 +484,9 @@ async function generateOccuMedContactInformationPdf(
 
   try {
     doc.addImage(logoData, "PNG", 34, 18, 34, 20);
-  } catch {}
+  } catch {
+    // The contact sheet remains usable if the optional logo cannot be embedded.
+  }
 
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "bold");
@@ -601,6 +605,38 @@ export async function appendAttachmentPages(
   }
 
   return pdfDoc.save();
+}
+
+export async function appendUploadedFiles(basePdfBytes: Uint8Array, files: File[]): Promise<Uint8Array> {
+  if (!files.length) return basePdfBytes;
+  const output = await PDFDocument.load(basePdfBytes);
+
+  for (const file of files) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+      const attachment = await PDFDocument.load(bytes);
+      const copied = await output.copyPages(attachment, attachment.getPageIndices());
+      copied.forEach((page) => output.addPage(page));
+      continue;
+    }
+
+    const isPng = file.type === "image/png" || file.name.toLowerCase().endsWith(".png");
+    const image = isPng ? await output.embedPng(bytes) : await output.embedJpg(bytes);
+    const page = output.addPage([595, 842]);
+    const maxWidth = 515;
+    const maxHeight = 762;
+    const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+    const width = image.width * scale;
+    const height = image.height * scale;
+    page.drawImage(image, {
+      x: (595 - width) / 2,
+      y: (842 - height) / 2,
+      width,
+      height,
+    });
+  }
+
+  return new Uint8Array(await output.save());
 }
 
 export async function generateContactSheetPdf(

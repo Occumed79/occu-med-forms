@@ -30,7 +30,9 @@ export async function generateProviderContactSheetPdf(
 
   try {
     doc.addImage(logoData, "PNG", 34, 18, 34, 20);
-  } catch {}
+  } catch {
+    // The contact sheet remains usable if the optional logo cannot be embedded.
+  }
 
   doc.setTextColor(0, 0, 0);
   doc.setFont("times", "bold");

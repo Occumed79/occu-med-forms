@@ -57,7 +57,7 @@ export const PriceTable = ({ rows, onChange, readOnly }: Props) => {
             <button
               type="button"
               onClick={() => remove(row.id)}
-              className="border-l border-border text-muted-foreground hover:text-destructive hover:bg-destructive/5 flex items-center justify-center"
+              className="pdf-exclude border-l border-border text-muted-foreground hover:text-destructive hover:bg-destructive/5 flex items-center justify-center"
               aria-label="Remove row"
             >
               <Trash2 className="h-4 w-4" />
@@ -70,7 +70,7 @@ export const PriceTable = ({ rows, onChange, readOnly }: Props) => {
         <button
           type="button"
           onClick={add}
-          className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-[hsl(var(--navy-orb-1))] bg-[hsl(var(--navy-orb-1)/0.07)] hover:bg-[hsl(var(--navy-orb-1)/0.14)] border-t border-border transition-colors"
+          className="pdf-exclude w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-[hsl(var(--navy-orb-1))] bg-[hsl(var(--navy-orb-1)/0.07)] hover:bg-[hsl(var(--navy-orb-1)/0.14)] border-t border-border transition-colors"
         >
           <Plus className="h-4 w-4" /> Add component
         </button>

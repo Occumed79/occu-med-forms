@@ -11,6 +11,24 @@ services:
         sync: false
       - key: FRONTEND_ORIGIN
         sync: false
+      - key: FRONTEND_APP_URL
+        sync: false
+      - key: INVITATION_TTL_DAYS
+        value: "30"
+      - key: INITIAL_ADMIN_EMAIL
+        sync: false
+      - key: INITIAL_ADMIN_PASSWORD
+        sync: false
+      - key: INITIAL_ADMIN_NAME
+        sync: false
+      - key: ADMIN_SESSION_HOURS
+        value: "8"
+      - key: ADMIN_IDLE_MINUTES
+        value: "30"
+      - key: DOCUMENT_RETENTION_DAYS
+        value: "2555"
+      - key: PROVIDER_RESPONSES_TO
+        sync: false
       - key: ENVELOPE_PREFIX
         value: "OM"
       - key: NODE_ENV

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { NavyHeader } from "./Headers";
 import { Field, Row, TextInput, Select, Textarea } from "./FormAtoms";
 import { AddressBlock } from "./AddressBlock";
@@ -8,10 +9,10 @@ import { FACILITY_TYPES, PROVIDER_SPECIALTIES } from "@/data/examComponents";
 import {
   appendAttachmentPages,
   downloadPdf,
-  generateSignedClinicPdf,
   generateCertificate,
   sha256,
 } from "@/lib/pdf";
+import { pdfBytesToBase64, screenFormPdf } from "@/lib/documentCapture";
 import {
   apiCreateEnvelope,
   apiFinalizeEnvelope,
@@ -55,6 +56,7 @@ export const SignedClinicMemoForm = () => {
   const [busy, setBusy] = useState(false);
   const [envelopeId, setEnvelopeId] = useState<string>("");
   const viewedAtRef = useRef<string | undefined>(undefined);
+  const formRef = useRef<HTMLDivElement>(null);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [includeOccuContactAttachment, setIncludeOccuContactAttachment] = useState(false);
   const [includeProviderContactAttachment, setIncludeProviderContactAttachment] = useState(false);
@@ -95,7 +97,8 @@ export const SignedClinicMemoForm = () => {
 
   const signLocally = async (finalData: SignedClinicMemoData) => {
     const localEnvelopeId = envelopeId || `OM-LOCAL-${Date.now()}`;
-    const basePdf = await generateSignedClinicPdf(finalData, localEnvelopeId);
+    if (!formRef.current) throw new Error("The form is not ready.");
+    const basePdf = await screenFormPdf(formRef.current);
     const finalPdfBytes = await withAttachments(basePdf);
     const pdfHash = await sha256(finalPdfBytes);
     const signedAt = new Date().toISOString();
@@ -151,6 +154,8 @@ export const SignedClinicMemoForm = () => {
       clinicRepDate: data.clinicRepDate || new Date().toISOString().slice(0, 10),
     };
     try {
+      flushSync(() => setData(finalData));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       let activeEnvelopeId = envelopeId;
       if (!activeEnvelopeId) {
         const created = await apiCreateEnvelope();
@@ -158,14 +163,16 @@ export const SignedClinicMemoForm = () => {
         setEnvelopeId(created.envelopeId);
       }
 
+      if (!formRef.current) throw new Error("The form is not ready.");
+      const exactPdf = await withAttachments(await screenFormPdf(formRef.current));
       const finalized = await apiFinalizeEnvelope(activeEnvelopeId, {
         data: finalData,
         viewedAt: viewedAtRef.current,
         recipientEmail: recipientEmail || undefined,
+        signedPdfBase64: pdfBytesToBase64(exactPdf),
       });
 
-      const pdfBytes = base64PdfToBytes(finalized.pdfBase64);
-      const finalPdfBytes = await withAttachments(pdfBytes);
+      const finalPdfBytes = base64PdfToBytes(finalized.pdfBase64);
       const certBytes = base64PdfToBytes(finalized.certificateBase64);
       downloadPdf(finalPdfBytes, `${finalized.envelopeId}-signed.pdf`);
       setTimeout(() => downloadPdf(certBytes, `${finalized.envelopeId}-certificate.pdf`), 400);
@@ -199,7 +206,8 @@ export const SignedClinicMemoForm = () => {
     setBusy(true);
     try {
       const draftEnvelopeId = envelopeId || `OM-DRAFT-${Date.now()}`;
-      const basePdf = await generateSignedClinicPdf({ ...data, billingTerms: "Net 30" }, draftEnvelopeId);
+      if (!formRef.current) throw new Error("The form is not ready.");
+      const basePdf = await screenFormPdf(formRef.current);
       const finalPdfBytes = await withAttachments(basePdf);
       downloadPdf(finalPdfBytes, `${draftEnvelopeId}-draft.pdf`);
       toast({ title: "Downloaded", description: "Document downloaded." });
@@ -214,7 +222,7 @@ export const SignedClinicMemoForm = () => {
     <div className="theme-navy flex flex-col md:flex-row gap-6 max-w-[1200px] mx-auto items-start">
       <ComponentSidebar onAdd={(c) => addComponent(c.name)} />
 
-      <div className="form-card flex-1" style={{ maxWidth: "none" }}>
+      <div ref={formRef} className="form-card flex-1" style={{ maxWidth: "none" }}>
         <NavyHeader title="Occu-Med, LTD\nProvider Service Agreement" />
         <div className="form-body">
           {backendWarning && (
@@ -286,6 +294,7 @@ export const SignedClinicMemoForm = () => {
             />
           </Field>
 
+          <div className="pdf-exclude">
           <hr className="section-divider" />
           <label className="flex items-center gap-2 text-sm mt-1 mb-2">
             <input type="checkbox" checked={includeOccuContactAttachment} onChange={(e) => setIncludeOccuContactAttachment(e.target.checked)} />
@@ -295,6 +304,7 @@ export const SignedClinicMemoForm = () => {
             <input type="checkbox" checked={includeProviderContactAttachment} onChange={(e) => setIncludeProviderContactAttachment(e.target.checked)} />
             Include attachment: Provider Contact Information
           </label>
+          </div>
 
           <hr className="section-divider" />
           <h3 className="text-base font-semibold text-[hsl(var(--label))] mb-3">Signatures</h3>
@@ -360,6 +370,7 @@ export const SignedClinicMemoForm = () => {
             </span>
           </label>
 
+          <div className="pdf-exclude">
           <Field label="Recipient Email">
             <TextInput
               type="email"
@@ -368,6 +379,7 @@ export const SignedClinicMemoForm = () => {
               onChange={(e) => setRecipientEmail(e.target.value)}
             />
           </Field>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 px-9 py-5 border-t border-border print-hide">

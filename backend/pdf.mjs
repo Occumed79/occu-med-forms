@@ -18,7 +18,7 @@ export async function generateSignedPdf({ envelopeId, data, signedAt, viewedAt, 
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   page.drawRectangle({ x: 0, y: 742, width: 612, height: 50, color: rgb(0.05, 0.12, 0.24) });
-  addLine(page, "Network Management Provider Pricing Sheet", 32, 760, bold, 16);
+  addLine(page, "Occu-Med Provider Service Agreement", 32, 760, bold, 16);
   addLine(page, `Envelope ID: ${envelopeId}`, 395, 760, regular, 9);
 
   let y = 712;
@@ -103,7 +103,14 @@ export async function generateCertificatePdf({ envelopeId, pdfHash, audit }) {
   };
 
   row("Envelope ID", envelopeId);
-  row("SHA-256", pdfHash);
+  row("Final PDF SHA-256", pdfHash);
+  row("Original Document SHA-256", audit.originalDocumentHash);
+  row("Signature Type", audit.signatureType);
+  row("Signature SHA-256", audit.signatureHash);
+  row("Evidence SHA-256", audit.evidenceHash);
+  if (audit.verificationUrl) row("Verify Certificate", audit.verificationUrl);
+  row("Agreement Status", audit.reviewStatus);
+  if (audit.approvedAt) row("Occu-Med Approved", audit.approvedAt);
   row("Created", audit.createdAt);
   row("Viewed", audit.viewedAt || "—");
   row("Signed", audit.signedAt);
@@ -112,6 +119,23 @@ export async function generateCertificatePdf({ envelopeId, pdfHash, audit }) {
   row("Occu-Med Representative", audit.occuMedRepName);
   row("Clinic Representative", audit.clinicRepFullName);
   row("Agreement to Electronic Record", audit.agreedElectronic ? "Accepted" : "Not Accepted");
+
+  addLine(page, "CONSENT STATEMENT", 32, y, bold, 9);
+  y -= 15;
+  const consent = audit.consentText || "Electronic records and signature consent captured at signing.";
+  const words = consent.split(/\s+/);
+  let line = "";
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (next.length > 88) {
+      addLine(page, line, 32, y, regular, 8);
+      y -= 11;
+      line = word;
+    } else {
+      line = next;
+    }
+  }
+  if (line) addLine(page, line, 32, y, regular, 8);
 
   const bytes = await pdfDoc.save();
   return new Uint8Array(bytes);

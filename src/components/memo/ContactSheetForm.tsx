@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { NavyHeader } from "./Headers";
 import { Field, Row, TextInput } from "./FormAtoms";
-import { downloadPdf, generateContactSheetPdf } from "@/lib/pdf";
-import { generateProviderContactSheetPdf } from "@/lib/providerContactSheetPdf";
+import { downloadPdf } from "@/lib/fileDownload";
+import { screenFormPdf } from "@/lib/documentCapture";
 import { occuMedContactSheetAttachment, providerContactSheetAttachment } from "@/lib/contactSheetAttachments";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,6 +25,7 @@ const isContactField = (label: string) => label.includes(" - Name | Title | Tele
 
 export const ContactSheetForm = ({ kind }: Props) => {
   const [busy, setBusy] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const initial = kind === "occu" ? occuMedContactSheetAttachment() : providerContactSheetAttachment();
@@ -44,9 +45,8 @@ export const ContactSheetForm = ({ kind }: Props) => {
   const handleDownload = async () => {
     setBusy(true);
     try {
-      const bytes = kind === "provider"
-        ? await generateProviderContactSheetPdf(title, fields)
-        : await generateContactSheetPdf(title, fields);
+      if (!formRef.current) throw new Error("The form is not ready.");
+      const bytes = await screenFormPdf(formRef.current);
       downloadPdf(bytes, `${kind}-contact-sheet-${Date.now()}.pdf`);
       toast({ title: "PDF downloaded", description: `${title} exported.` });
     } catch (e) {
@@ -58,7 +58,7 @@ export const ContactSheetForm = ({ kind }: Props) => {
 
   return (
     <div className="theme-navy max-w-[1180px] mx-auto">
-      <div className="form-card" style={{ maxWidth: "none" }}>
+      <div ref={formRef} className="form-card" style={{ maxWidth: "none" }}>
         <NavyHeader title={title} />
         <div className="form-body">
           {pairs(baseFields).map((row, index) => (
@@ -95,7 +95,7 @@ export const ContactSheetForm = ({ kind }: Props) => {
             </Field>
           ))}
         </div>
-        <div className="flex justify-end border-t border-border px-9 py-5">
+        <div className="print-hide flex justify-end border-t border-border px-9 py-5">
           <button type="button" onClick={handleDownload} disabled={busy} className="btn-base btn-navy disabled:opacity-60">
             {busy ? "Generating…" : "Download PDF"}
           </button>
