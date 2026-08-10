@@ -10,6 +10,7 @@ import { EXAM_CATEGORIES } from "@/data/examComponents";
 import { apiDeclineProviderInvitation, apiDownloadProviderInvitationFile, apiFinalizeProviderInvitation, apiGetProviderInvitation, base64PdfToBytes } from "@/lib/backend";
 import { pdfBytesToBase64, providerDocumentPdf } from "@/lib/documentCapture";
 import { downloadPdf } from "@/lib/fileDownload";
+import { occuMedContactSheetAttachment, providerContactSheetAttachment, providerContactSheetFields } from "@/lib/contactSheetAttachments";
 import { createProviderServiceRow, documentTitle, ELECTRONIC_RECORD_CONSENT_TEXT, validateProviderDocument } from "@/lib/providerDocuments";
 import type { ProviderDocumentData, ProviderInvitation, ProviderServiceRow } from "@/types/memo";
 
@@ -45,6 +46,9 @@ export default function ProviderInvitationPage() {
         setInvitation(result);
         setData({
           ...result.data,
+          includedForms: result.data.includedForms || [],
+          occuMedContactFields: result.data.occuMedContactFields?.length ? result.data.occuMedContactFields : occuMedContactSheetAttachment().fields,
+          providerContactFields: result.data.providerContactFields?.length ? result.data.providerContactFields : providerContactSheetAttachment().fields,
           providerSignatureType: result.data.providerSignatureType || "typed",
           providerSignatureData: result.data.providerSignatureData || "",
           electronicConsentText: result.electronicRecordConsentText || ELECTRONIC_RECORD_CONSENT_TEXT,
@@ -79,11 +83,17 @@ export default function ProviderInvitationPage() {
 
   const awaitingApproval = invitation.status === "returned";
   const locked = awaitingApproval || invitation.status === "completed" || Boolean(completedHash);
+  const includedForms = data.includedForms || [];
+  const providerContactFields = providerContactSheetFields(data);
   const set = <K extends keyof ProviderDocumentData>(key: K, value: ProviderDocumentData[K]) =>
     setData((current) => current ? { ...current, [key]: value } : current);
   const updateService = (id: string, patch: Partial<ProviderServiceRow>) =>
     set("services", data.services.map((row) => row.id === id ? { ...row, ...patch } : row));
   const removeService = (id: string) => set("services", data.services.filter((row) => row.id !== id));
+  const updateProviderContactField = (label: string, value: string) => {
+    const source = data.providerContactFields?.length ? data.providerContactFields : providerContactSheetAttachment().fields;
+    set("providerContactFields", source.map((field) => field.label === label ? { ...field, value } : field));
+  };
 
   const addSelectedService = () => {
     if (!selectedService || data.services.some((row) => row.component === selectedService)) return;
@@ -164,7 +174,7 @@ export default function ProviderInvitationPage() {
     <main className="provider-invite-shell">
       <div className="provider-invite-toolbar">
         <div>
-          <h1>{documentTitle(data.documentType)}</h1>
+          <h1>{includedForms.length ? `${documentTitle(data.documentType)} package` : documentTitle(data.documentType)}</h1>
           <p>{awaitingApproval ? "Returned to Occu-Med for approval" : locked ? "Completed document" : "Review the services, complete your information, and accept the document."}</p>
         </div>
         <div className="provider-toolbar-actions">
@@ -185,7 +195,7 @@ export default function ProviderInvitationPage() {
       <div className="provider-invite-layout">
         <aside className="provider-invite-editor" aria-label="Provider completion controls">
           <h2>Your response</h2>
-          <p>You are editing only the document Occu-Med invited you to review. Other Occu-Med forms are not accessible from this page.</p>
+          <p>You are editing only the {1 + includedForms.length} form{includedForms.length ? "s" : ""} Occu-Med selected for this invitation. Other Occu-Med documents are not accessible here.</p>
 
           {actionError && <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">{actionError}</div>}
 
@@ -204,6 +214,19 @@ export default function ProviderInvitationPage() {
           <Field label="Provider Address">
             <AddressBlock value={data.address} disabled={locked} onChange={(address) => set("address", address)} />
           </Field>
+
+          {includedForms.includes("provider-contact-sheet") && (
+            <section className="provider-package-editor-section">
+              <hr className="section-divider" />
+              <h2>Provider Contact Sheet</h2>
+              <p>Complete the contact and operating details Occu-Med should use for this facility.</p>
+              {providerContactFields.map((field) => (
+                <Field key={field.label} label={field.label.replace(" - Name | Title | Telephone | Email | Preferred Method", "").replace(" - Name | Title | Telephone | Email", "")}>
+                  <TextInput value={field.value} disabled={locked} onChange={(event) => updateProviderContactField(field.label, event.target.value)} />
+                </Field>
+              ))}
+            </section>
+          )}
 
           <hr className="section-divider" />
           <h2>Services</h2>

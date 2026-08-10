@@ -22,8 +22,8 @@ export function AdminLayout() {
         </NavLink>
         <nav aria-label="Admin navigation">
           <NavLink to="/admin" end><LayoutDashboard size={17} /> Dashboard</NavLink>
-          {user.permissions.includes("create_documents") && <NavLink to="/admin/documents/new/fee-proposal"><FilePlus2 size={17} /> New document</NavLink>}
-          {user.permissions.includes("create_documents") && <NavLink to="/admin/forms"><Files size={17} /> Other forms</NavLink>}
+          {user.permissions.includes("create_documents") && <NavLink to="/admin/documents/new/service-agreement"><FilePlus2 size={17} /> New package</NavLink>}
+          {user.permissions.includes("create_documents") && <NavLink to="/admin/forms"><Files size={17} /> Form library</NavLink>}
           {user.permissions.includes("manage_users") && <NavLink to="/admin/users"><Users size={17} /> Accounts</NavLink>}
           {(user.permissions.includes("manage_retention") || user.permissions.includes("view_security_audit")) && <NavLink to="/admin/governance"><Database size={17} /> Governance</NavLink>}
         </nav>

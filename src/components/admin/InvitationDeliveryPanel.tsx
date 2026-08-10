@@ -8,7 +8,7 @@ import {
   createInvitationEmailDraft,
   outlookComposeUrl,
 } from "@/lib/invitationEmail";
-import type { ProviderDocumentType } from "@/types/memo";
+import type { ProviderDocumentType, ProviderPackageForm } from "@/types/memo";
 
 interface InvitationDeliveryPanelProps {
   invitationId: string;
@@ -18,6 +18,7 @@ interface InvitationDeliveryPanelProps {
   recipientEmail?: string;
   documentType: ProviderDocumentType;
   documentNumber: string;
+  includedForms?: ProviderPackageForm[];
   replacementLink?: boolean;
   onMarkedSent?: () => void | Promise<void>;
 }
@@ -30,6 +31,7 @@ export function InvitationDeliveryPanel({
   recipientEmail,
   documentType,
   documentNumber,
+  includedForms,
   replacementLink = false,
   onMarkedSent,
 }: InvitationDeliveryPanelProps) {
@@ -43,7 +45,8 @@ export function InvitationDeliveryPanel({
     documentType,
     documentNumber,
     providerLink,
-  }), [documentNumber, documentType, providerContactName, providerLink, providerName, recipientEmail, user.displayName, user.email]);
+    includedForms,
+  }), [documentNumber, documentType, includedForms, providerContactName, providerLink, providerName, recipientEmail, user.displayName, user.email]);
   const [to, setTo] = useState(initial.to);
   const [cc, setCc] = useState(initial.cc);
   const [subject, setSubject] = useState(initial.subject);

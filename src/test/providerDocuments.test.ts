@@ -18,8 +18,17 @@ describe("provider document workflow", () => {
     expect(proposal.billingTerms).toBe("Net 30");
     expect(proposal.providerSignatureType).toBe("typed");
     expect(proposal.electronicConsentText).toBe(ELECTRONIC_RECORD_CONSENT_TEXT);
+    expect(proposal.includedForms).toEqual([]);
+    expect(proposal.occuMedContactFields.length).toBeGreaterThan(0);
+    expect(proposal.providerContactFields.length).toBeGreaterThan(0);
     expect(agreement.documentNumber).toMatch(/^OM-PSA-/);
     expect(documentTitle(agreement.documentType)).toBe("Provider Service Agreement");
+  });
+
+  it("stores multiple selected forms in one provider package", () => {
+    const data = createProviderDocumentData("service-agreement");
+    data.includedForms = ["provider-contact-sheet", "occu-med-contact-sheet"];
+    expect(data.includedForms).toEqual(["provider-contact-sheet", "occu-med-contact-sheet"]);
   });
 
   it("requires provider and service data before an invitation can be created", () => {

@@ -116,9 +116,9 @@ All colors MUST be HSL.
 
 .provider-document-header {
   display: grid;
-  grid-template-columns: 42mm 1fr 45mm;
+  grid-template-columns: 37mm 1fr 38mm;
   align-items: center;
-  gap: 7mm;
+  gap: 5mm;
   min-height: 28mm;
   margin: -17mm -16mm 11mm;
   padding: 8mm 16mm;
@@ -126,11 +126,10 @@ All colors MUST be HSL.
   background: linear-gradient(120deg, #0d1f3c 0%, #1e50a0 55%, #3c82dc 100%);
 }
 
-.provider-document-header img {
+.provider-document-header > svg {
   width: 34mm;
-  max-height: 20mm;
-  object-fit: contain;
-  filter: brightness(0) invert(1);
+  height: 20mm;
+  color: #fff;
 }
 
 .provider-document-company {
@@ -145,8 +144,9 @@ All colors MUST be HSL.
 .provider-document-header h2 {
   margin: 0;
   font-family: "Source Serif 4", Georgia, serif;
-  font-size: 20pt;
+  font-size: 18pt;
   line-height: 1.05;
+  white-space: nowrap;
 }
 
 .provider-document-number {
@@ -236,6 +236,10 @@ All colors MUST be HSL.
 .provider-document-notes p, .provider-document-terms p { margin: 1mm 0 0; white-space: pre-wrap; }
 .provider-document-terms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
 .provider-document-terms > div { padding: 3mm; border: 0.25mm solid #dfe6ef; border-radius: 1.5mm; }
+.provider-document-terms-block { margin: 4mm 0 5mm; }
+.provider-document-terms-heading { margin-bottom: 2mm; color: #0d1f3c; font-size: 8pt; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.provider-document-terms-block .provider-document-terms { margin-top: 0; }
+.provider-document-terms-block .provider-document-terms > div { border-top: .8mm solid #3c82dc; background: #f8fafc; }
 
 .provider-document-signature {
   display: grid;
@@ -254,6 +258,29 @@ All colors MUST be HSL.
 .provider-document-signature .signature-name { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 16pt; }
 .provider-drawn-signature { display: block; width: 48mm; height: 10mm; margin: -1mm 0 .5mm; object-fit: contain; object-position: left center; }
 .provider-document-signature p { margin: 0.5mm 0; font-size: 7.8pt; }
+
+.occu-signature-seal { display: flex; align-items: center; gap: 10px; color: currentColor; }
+.occu-signature-seal svg { flex: 0 0 auto; width: 48px; height: 48px; }
+.occu-signature-ridges { stroke-width: 1.25; opacity: .8; }
+.occu-signature-mark { opacity: .98; }
+.occu-signature-seal > div { display: grid; gap: 1px; }
+.occu-signature-seal strong { min-height: 0 !important; font-size: 11px !important; letter-spacing: .08em; }
+.occu-signature-seal span { margin: 0 !important; color: currentColor !important; font-size: 8px !important; font-weight: 600 !important; letter-spacing: .02em !important; opacity: .72; text-transform: none !important; }
+.occu-signature-seal.compact { width: fit-content; margin: 0 0 2mm; color: #0d1f3c; }
+.occu-signature-seal.compact svg { width: 13mm; height: 13mm; }
+.occu-signature-seal.compact > div { display: none; }
+
+.contact-sheet-section { margin-top: 7mm; }
+.contact-sheet-section h3 { margin: 0 0 3mm; color: #0d1f3c; font-size: 10pt; letter-spacing: .06em; text-transform: uppercase; }
+.contact-sheet-grid, .contact-hours-grid, .contact-sheet-contacts dl { margin: 0; }
+.contact-sheet-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0 7mm; }
+.contact-sheet-grid > div, .contact-hours-grid > div { display: grid; grid-template-columns: 33mm 1fr; gap: 3mm; padding: 2.5mm 0; border-bottom: .25mm solid #e0e7f0; }
+.contact-sheet-section dt { color: #68778b; font-size: 7pt; font-weight: 800; text-transform: uppercase; }
+.contact-sheet-section dd { margin: 0; color: #172a48; font-size: 8.5pt; font-weight: 600; }
+.contact-hours-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0 7mm; }
+.contact-sheet-contacts dl { display: grid; grid-template-columns: repeat(2,1fr); gap: 3mm; }
+.contact-sheet-contacts dl > div { min-height: 17mm; padding: 3mm; border: .25mm solid #dce5ef; border-radius: 1.5mm; background: #f8fafc; }
+.contact-sheet-contacts dd { margin-top: 1.5mm; font-size: 7.8pt; line-height: 1.4; }
 
 .provider-document-page footer {
   position: absolute;
@@ -758,7 +785,8 @@ All colors MUST be HSL.
     flex-shrink: 0;
     position: relative;
     z-index: 1;
-    filter: brightness(0) invert(1);
+    color: #fff;
+    filter: none;
   }
 
   .form-card > .aurora-header .header-logo,
@@ -770,14 +798,14 @@ All colors MUST be HSL.
   .form-card > .aurora-header .header-title,
   .form-card > .navy-header .header-title {
     text-align: center;
-    max-width: min(100%, 860px);
+    max-width: calc(100% - 250px);
     margin: 0 auto;
-    padding-left: 120px;
+    padding-left: 0;
   }
 
   .header-title {
     font-family: "Source Serif 4", serif;
-    font-size: 26px;
+    font-size: 32px;
     font-weight: 600;
     letter-spacing: 0.01em;
     color: #fff;
@@ -785,11 +813,35 @@ All colors MUST be HSL.
     position: relative;
     z-index: 1;
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
   }
 
   .theme-navy .header-logo {
-    filter: brightness(0) invert(1);
+    color: #fff;
+    filter: none;
   }
+
+  .document-package-picker { margin-bottom: 18px; padding: 18px; border: 1px solid #cedaea; border-radius: 10px; background: #f8fafd; }
+  .document-package-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 13px; }
+  .document-package-heading p { margin: 0 0 3px; color: #3972bd; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .document-package-heading h2 { margin: 0; color: #142a4b; font-size: 15px; }
+  .document-package-heading > span { padding: 5px 9px; border-radius: 12px; color: #1c5c99; background: #e6f0fc; font-size: 9.5px; font-weight: 800; }
+  .document-package-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+  .document-package-option { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 9px; min-height: 66px; padding: 10px; border: 1px solid #d6e0eb; border-radius: 8px; color: #536279; background: #fff; text-align: left; }
+  button.document-package-option { cursor: pointer; }
+  .document-package-option > span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 7px; color: #3972bd; background: #edf4fd; }
+  .document-package-option > div { display: grid; gap: 3px; }
+  .document-package-option strong { color: #253751; font-size: 10.5px; }
+  .document-package-option small { color: #7d8999; font-size: 8.5px; }
+  .document-package-option.selected { border-color: #6c9bd4; background: #eef5fe; box-shadow: inset 0 0 0 1px #9dbce1; }
+  .document-package-option.selected > svg { color: #1d6b45; }
+  .document-package-option.locked { cursor: default; }
+  .agreement-terms-admin { margin: 0 0 23px; padding: 18px; border: 1px solid #d8e2ed; border-radius: 9px; background: #fff; }
+  .agreement-terms-admin h3 { margin: 0; color: #142a4b; font-size: 15px; }
+  .agreement-terms-admin > div:last-child { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-top: 13px; }
+  .agreement-terms-admin article { padding: 12px; border-top: 3px solid #397bd0; border-radius: 6px; background: #f6f9fd; }
+  .agreement-terms-admin article strong { color: #18375f; font-size: 10px; }
+  .agreement-terms-admin article p { margin: 5px 0 0; color: #607087; font-size: 9px; line-height: 1.45; }
 
   .form-body {
     padding: 32px 36px 28px;

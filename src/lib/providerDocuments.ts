@@ -3,6 +3,7 @@ import type {
   ProviderDocumentType,
   ProviderServiceRow,
 } from "@/types/memo";
+import { occuMedContactSheetAttachment, providerContactSheetAttachment } from "@/lib/contactSheetAttachments";
 
 export const SERVICE_AGREEMENT_SECTIONS = [
   {
@@ -57,6 +58,9 @@ export function createProviderDocumentData(documentType: ProviderDocumentType): 
     billingTerms: "Net 30",
     services: [],
     notes: "",
+    includedForms: [],
+    occuMedContactFields: occuMedContactSheetAttachment().fields,
+    providerContactFields: providerContactSheetAttachment().fields,
     providerSignerName: "",
     providerSignerTitle: "",
     providerSignatureType: "typed",

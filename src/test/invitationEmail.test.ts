@@ -36,4 +36,21 @@ describe("manual Outlook invitation email", () => {
     expect(copied).toContain("To: provider@example.com");
     expect(copied).toContain(`Subject: ${draft.subject}`);
   });
+
+  it("identifies every selected form in a document package", () => {
+    const packageDraft = createInvitationEmailDraft({
+      fromName: "Alex Ayvazian",
+      fromEmail: "alex@occu-med.com",
+      to: "provider@example.com",
+      providerName: "Example Clinic",
+      documentType: "service-agreement",
+      documentNumber: "OM-PSA-1001",
+      providerLink: "https://documents.example.com/provider/secret-token",
+      includedForms: ["provider-contact-sheet", "occu-med-contact-sheet"],
+    });
+    expect(packageDraft.subject).toBe("Occu-Med document package for Example Clinic");
+    expect(packageDraft.body).toContain("• Service Agreement");
+    expect(packageDraft.body).toContain("• Provider Contact Sheet");
+    expect(packageDraft.body).toContain("• Occu-Med Contact Sheet");
+  });
 });

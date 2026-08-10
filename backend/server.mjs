@@ -282,6 +282,15 @@ function buildCompletedProviderData(original, submitted, completedAt) {
       source: originalService ? "occu-med" : "provider",
     };
   }).filter((service) => service.component);
+  const submittedContactFields = new Map(
+    (submitted.providerContactFields || []).slice(0, 100).map((field) => [limitedText(field?.label, 200), limitedText(field?.value, 2_000)]),
+  );
+  const providerContactFields = (original.providerContactFields || []).slice(0, 100).map((field) => ({
+    label: limitedText(field?.label, 200),
+    value: submittedContactFields.has(field?.label)
+      ? submittedContactFields.get(field.label)
+      : limitedText(field?.value, 2_000),
+  })).filter((field) => field.label);
 
   return {
     ...original,
@@ -297,6 +306,7 @@ function buildCompletedProviderData(original, submitted, completedAt) {
       zip: limitedText(submitted.address?.zip, 40),
     },
     services,
+    providerContactFields,
     providerSignerName: limitedText(submitted.providerSignerName),
     providerSignerTitle: limitedText(submitted.providerSignerTitle),
     providerSignatureType: submitted.providerSignatureType === "drawn" ? "drawn" : "typed",

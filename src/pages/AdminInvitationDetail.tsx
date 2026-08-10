@@ -188,6 +188,7 @@ export default function AdminInvitationDetailPage() {
           recipientEmail={invite.recipientEmail || invite.data.providerEmail}
           documentType={invite.documentType}
           documentNumber={invite.documentNumber}
+          includedForms={invite.data.includedForms || []}
           replacementLink
           onMarkedSent={load}
         />

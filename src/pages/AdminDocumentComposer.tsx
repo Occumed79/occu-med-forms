@@ -18,11 +18,11 @@ export default function AdminDocumentComposerPage() {
         <Link to="/admin"><ArrowLeft size={16} /> Invitations</Link>
         <div className="admin-composer-title">
           <span>{proposal ? <FileText size={20} /> : <FileSignature size={20} />}</span>
-          <div><p className="admin-eyebrow">Create provider invitation</p><h1>{proposal ? "Provider Fee Proposal" : "Provider Service Agreement"}</h1></div>
+          <div><p className="admin-eyebrow">Create provider invitation</p><h1>{proposal ? "Fee Proposal Package" : "Service Agreement Package"}</h1></div>
         </div>
         <div className="admin-document-switch">
-          <Link className={proposal ? "active" : ""} to="/admin/documents/new/fee-proposal">Fee proposal</Link>
-          <Link className={!proposal ? "active" : ""} to="/admin/documents/new/service-agreement">Service agreement</Link>
+          <Link className={proposal ? "active" : ""} to="/admin/documents/new/fee-proposal">Fee proposal package</Link>
+          <Link className={!proposal ? "active" : ""} to="/admin/documents/new/service-agreement">Service agreement package</Link>
         </div>
       </div>
       <ProviderDocumentForm key={type} documentType={type} />

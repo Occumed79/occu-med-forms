@@ -70,8 +70,8 @@ export default function AdminDashboardPage() {
           <p>Create provider documents, monitor when they are opened, and download completed agreements.</p>
         </div>
         {canCreate && <div className="admin-create-actions">
-          <Link to="/admin/documents/new/fee-proposal" className="admin-primary-action"><FilePlus2 size={18} /> New fee proposal</Link>
-          <Link to="/admin/documents/new/service-agreement" className="admin-secondary-action"><FileSignature size={18} /> New service agreement</Link>
+          <Link to="/admin/documents/new/service-agreement" className="admin-primary-action"><FileSignature size={18} /> New service agreement package</Link>
+          <Link to="/admin/documents/new/fee-proposal" className="admin-secondary-action"><FilePlus2 size={18} /> New fee proposal package</Link>
         </div>}
       </section>
 
@@ -108,8 +108,8 @@ export default function AdminDashboardPage() {
           <div className="admin-empty-state">
             <FileText size={28} />
             <h3>{search || filter !== "all" ? "No matching invitations" : "No invitations yet"}</h3>
-            <p>{search || filter !== "all" ? "Change the search or status filter." : "Create the first provider fee proposal or service agreement."}</p>
-            {!search && filter === "all" && canCreate && <Link to="/admin/documents/new/fee-proposal">Create a fee proposal <ArrowRight size={15} /></Link>}
+            <p>{search || filter !== "all" ? "Change the search or status filter." : "Create the first provider document package."}</p>
+            {!search && filter === "all" && canCreate && <Link to="/admin/documents/new/service-agreement">Create a document package <ArrowRight size={15} /></Link>}
           </div>
         ) : null}
 
