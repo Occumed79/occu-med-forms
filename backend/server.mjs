@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import http from "node:http";
 import { URL } from "node:url";
 import pg from "pg";
+import { sanitizeDatabaseUrl } from "./database-url.mjs";
 import {
   ADMIN_ROLES,
   hasPermission,
@@ -32,19 +33,6 @@ const ELECTRONIC_RECORD_CONSENT_TEXT =
 let pool = null;
 let dummyPasswordHash = "";
 const rateWindows = new Map();
-
-function sanitizeDatabaseUrl(raw) {
-  if (!raw) return "";
-  let url = raw.trim();
-  if (!url) return "";
-  url = url.replace(/[?&]channel_binding=[^&]*/gi, "");
-  url = url.replace(/\?$/, "").replace(/&$/, "");
-  if (process.env.NODE_ENV === "production" && !/sslmode=/i.test(url)) {
-    const sep = url.includes("?") ? "&" : "?";
-    url = `${url}${sep}sslmode=require`;
-  }
-  return url;
-}
 
 async function initDbPool() {
   const connStr = sanitizeDatabaseUrl(process.env.DATABASE_URL || "");
