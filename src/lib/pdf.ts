@@ -276,7 +276,7 @@ export async function generateSignedClinicPdf(
   d: SignedClinicMemoData,
   envelopeId: string,
 ): Promise<Uint8Array> {
-  const { doc, pageW, pageH } = await buildBasePdf("Provider Service Agreement", "navy");
+  const { doc, pageW, pageH } = await buildBasePdf("Legacy Signed Pricing Agreement", "navy");
   let y = 40;
   y = drawFieldsGrid(doc, [
     { label: "Network Management Analyst", value: d.analystName },
@@ -318,13 +318,17 @@ export async function generateSignedClinicPdf(
 
   const sigW = (pageW - 28 - 8) / 2;
 
-  // Occu-Med rep (fingerprint stylized: simple radial pattern as placeholder)
+  // Occu-Med fingerprint seal. The ridges wrap the three-part OM mark.
   const drawFingerprint = (x: number, yy: number) => {
     doc.setDrawColor(13, 31, 60);
     doc.setLineWidth(0.4);
-    for (let r = 2; r < 9; r += 1.4) {
-      doc.circle(x + 12, yy + 10, r, "S");
+    for (let r = 4; r < 11; r += 1.4) {
+      doc.ellipse(x + 12, yy + 10, r, r * 1.25, "S");
     }
+    doc.setFillColor(13, 31, 60);
+    doc.roundedRect(x + 8.5, yy + 7, 2.2, 7, 1, 1, "F");
+    doc.rect(x + 11.3, yy + 7, 2.2, 7, "F");
+    doc.roundedRect(x + 14.1, yy + 7, 2.2, 7, 1, 1, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(13, 31, 60);

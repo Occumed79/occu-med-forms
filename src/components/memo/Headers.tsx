@@ -1,4 +1,4 @@
-import logo from "@/assets/occu-med-logo.png";
+import { OccuMedLogo } from "@/components/branding/OccuMedLogo";
 
 interface Props {
   title: string;
@@ -23,7 +23,7 @@ const HeaderTitle = ({ title }: Props) => {
 
 export const AuroraHeader = ({ title }: Props) => (
   <div className="aurora-header">
-    <img src={logo} alt="Occu-Med" className="header-logo" />
+    <OccuMedLogo monochrome className="header-logo" />
     <HeaderTitle title={title} />
   </div>
 );
@@ -34,7 +34,7 @@ export const NavyHeader = ({ title }: Props) => (
     <div className="navy-orb navy-orb-2" />
     <div className="navy-orb navy-orb-3" />
     <div className="navy-orb navy-orb-4" />
-    <img src={logo} alt="Occu-Med" className="header-logo" />
+    <OccuMedLogo monochrome className="header-logo" />
     <HeaderTitle title={title} />
   </div>
 );

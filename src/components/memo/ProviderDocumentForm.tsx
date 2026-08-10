@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Download, Link2, Mail, Trash2 } from "lucide-react";
+import { Check, Download, FileSignature, Link2, Mail, Trash2, UsersRound } from "lucide-react";
 import { InvitationDeliveryPanel } from "@/components/admin/InvitationDeliveryPanel";
 import { useAdminUser } from "@/components/admin/adminAuth";
 import { AddressBlock } from "./AddressBlock";
@@ -14,10 +14,11 @@ import {
   createProviderDocumentData,
   createProviderServiceRow,
   documentTitle,
+  SERVICE_AGREEMENT_SECTIONS,
   validateProviderDocument,
 } from "@/lib/providerDocuments";
 import { useToast } from "@/hooks/use-toast";
-import type { ProviderDocumentData, ProviderDocumentType, ProviderServiceRow } from "@/types/memo";
+import type { ProviderDocumentData, ProviderDocumentType, ProviderPackageForm, ProviderServiceRow } from "@/types/memo";
 
 interface Props {
   documentType: ProviderDocumentType;
@@ -55,6 +56,12 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
 
   const removeService = (id: string) =>
     set("services", data.services.filter((row) => row.id !== id));
+
+  const toggleIncludedForm = (form: ProviderPackageForm) => {
+    set("includedForms", data.includedForms.includes(form)
+      ? data.includedForms.filter((item) => item !== form)
+      : [...data.includedForms, form]);
+  };
 
   const makePdf = async () => {
     if (!previewRef.current) throw new Error("The document preview is not ready.");
@@ -106,12 +113,43 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
       <ComponentSidebar onAdd={(component) => addService(component.name)} />
 
       <div className="form-card flex-1 min-w-0" style={{ maxWidth: "none" }}>
-        <NavyHeader title={`Occu-Med, LTD\n${documentTitle(documentType)}`} />
+        <NavyHeader title={documentTitle(documentType)} />
         <div className="form-body">
+          <section className="document-package-picker" aria-labelledby="document-package-title">
+            <div className="document-package-heading">
+              <div><p>Document package</p><h2 id="document-package-title">Choose every form this provider should receive</h2></div>
+              <span>{1 + data.includedForms.length} selected</span>
+            </div>
+            <div className="document-package-options">
+              <div className="document-package-option selected locked">
+                <span><FileSignature size={19} /></span>
+                <div><strong>{documentTitle(documentType)}</strong><small>Primary document</small></div>
+                <Check size={17} />
+              </div>
+              <button type="button" className={`document-package-option ${data.includedForms.includes("provider-contact-sheet") ? "selected" : ""}`} onClick={() => toggleIncludedForm("provider-contact-sheet")}>
+                <span><UsersRound size={19} /></span>
+                <div><strong>Provider Contact Sheet</strong><small>Provider completes it</small></div>
+                {data.includedForms.includes("provider-contact-sheet") && <Check size={17} />}
+              </button>
+              <button type="button" className={`document-package-option ${data.includedForms.includes("occu-med-contact-sheet") ? "selected" : ""}`} onClick={() => toggleIncludedForm("occu-med-contact-sheet")}>
+                <span><UsersRound size={19} /></span>
+                <div><strong>Occu-Med Contact Sheet</strong><small>Included as reference</small></div>
+                {data.includedForms.includes("occu-med-contact-sheet") && <Check size={17} />}
+              </button>
+            </div>
+          </section>
+
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-5 text-sm text-blue-950">
-            Prepare the document here, then create a personalized Outlook email with a provider-specific link.
-            The provider can review only this document, add or remove services, sign it, and return the final PDF.
+            Prepare this package, then create a personalized Outlook email with one provider-specific link.
+            The provider sees only the selected forms, can complete its contact sheet, adjust services, sign, and return one final PDF package.
           </div>
+
+          {documentType === "service-agreement" && (
+            <section className="agreement-terms-admin">
+              <div><p className="admin-eyebrow">Agreement terms</p><h3>Terms included at the top of the agreement</h3></div>
+              <div>{SERVICE_AGREEMENT_SECTIONS.map((section) => <article key={section.title}><strong>{section.title}</strong><p>{section.body}</p></article>)}</div>
+            </section>
+          )}
 
           <Row>
             <Field label="Provider / Facility Name" required>
@@ -207,6 +245,7 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
               recipientEmail={data.providerEmail}
               documentType={documentType}
               documentNumber={data.documentNumber}
+              includedForms={data.includedForms}
             />
           )}
         </div>

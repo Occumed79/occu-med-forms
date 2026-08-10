@@ -18,7 +18,7 @@ export async function generateSignedPdf({ envelopeId, data, signedAt, viewedAt, 
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   page.drawRectangle({ x: 0, y: 742, width: 612, height: 50, color: rgb(0.05, 0.12, 0.24) });
-  addLine(page, "Occu-Med Provider Service Agreement", 32, 760, bold, 16);
+  addLine(page, "Occu-Med Legacy Signed Pricing Agreement", 32, 760, bold, 16);
   addLine(page, `Envelope ID: ${envelopeId}`, 395, 760, regular, 9);
 
   let y = 712;
@@ -52,17 +52,20 @@ export async function generateSignedPdf({ envelopeId, data, signedAt, viewedAt, 
 
   page.drawRectangle({ x: 32, y: y - 66, width: 260, height: 62, borderColor: rgb(0.72, 0.76, 0.82), borderWidth: 1 });
   page.drawRectangle({ x: 320, y: y - 66, width: 260, height: 62, borderColor: rgb(0.72, 0.76, 0.82), borderWidth: 1 });
-  // Small fingerprint treatment for Occu-Med signature block.
+  // Occu-Med fingerprint seal with the OM mark embedded in the center.
   for (let i = 0; i < 6; i++) {
     page.drawEllipse({
       x: 62,
       y: y - 34,
-      xScale: 12 - i * 1.5,
-      yScale: 8 - i * 1.1,
+      xScale: 14 - i * 1.7,
+      yScale: 18 - i * 2.1,
       borderColor: rgb(0.75, 0.84, 0.95),
       borderWidth: 0.7,
     });
   }
+  page.drawRectangle({ x: 56, y: y - 39, width: 3, height: 12, color: rgb(0.05, 0.12, 0.24) });
+  page.drawRectangle({ x: 61, y: y - 39, width: 3, height: 12, color: rgb(0.05, 0.12, 0.24) });
+  page.drawRectangle({ x: 66, y: y - 39, width: 3, height: 12, color: rgb(0.05, 0.12, 0.24) });
   addLine(page, `Occu-Med: ${data.occuMedRepTitle} | ${data.occuMedRepName} | ${data.occuMedRepDate || signedAt.slice(0, 10)}`, 40, y - 20, regular, 9);
   addLine(page, `Clinic: ${data.clinicRepTitle} | ${data.clinicRepFullName} | ${data.clinicRepDate || signedAt.slice(0, 10)}`, 328, y - 20, regular, 9);
   y -= 84;

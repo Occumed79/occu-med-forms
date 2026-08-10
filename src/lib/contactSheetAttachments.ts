@@ -1,4 +1,12 @@
-export type AttachmentPage = { title: string; fields: Array<{ label: string; value: string }> };
+import type { ContactSheetField, ProviderDocumentData } from "@/types/memo";
+
+export type AttachmentPage = { title: string; fields: ContactSheetField[] };
+
+export const CONTACT_HOUR_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+export const CONTACT_ROLE_MARKER = " - Name | Title | Telephone | Email";
+
+export const isContactHourField = (label: string) => CONTACT_HOUR_LABELS.includes(label as (typeof CONTACT_HOUR_LABELS)[number]);
+export const isContactRoleField = (label: string) => label.includes(CONTACT_ROLE_MARKER);
 
 export const occuMedContactSheetAttachment = (): AttachmentPage => ({
   title: "Occu-Med Contact Information",
@@ -48,3 +56,19 @@ export const providerContactSheetAttachment = (): AttachmentPage => ({
     { label: "Corporate - Name | Title | Telephone | Email", value: "" },
   ],
 });
+
+export function providerContactSheetFields(data: ProviderDocumentData): ContactSheetField[] {
+  const defaults: Record<string, string> = {
+    "Clinic Name": data.providerName,
+    Address: [data.address.street1, data.address.street2].filter(Boolean).join(", "),
+    "City, State Zip": [data.address.city, data.address.state, data.address.zip].filter(Boolean).join(", "),
+    Telephone: data.providerPhone,
+  };
+  const source = data.providerContactFields?.length
+    ? data.providerContactFields
+    : providerContactSheetAttachment().fields;
+  return source.map((field) => ({
+    ...field,
+    value: field.value || defaults[field.label] || "",
+  }));
+}

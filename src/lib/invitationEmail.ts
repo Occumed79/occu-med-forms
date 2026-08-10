@@ -1,5 +1,5 @@
 import { adminDocumentLabel } from "@/lib/adminInvitations";
-import type { ProviderDocumentType } from "@/types/memo";
+import type { ProviderDocumentType, ProviderPackageForm } from "@/types/memo";
 
 export interface InvitationEmailDraft {
   fromName: string;
@@ -19,8 +19,12 @@ export function createInvitationEmailDraft(input: {
   documentType: ProviderDocumentType;
   documentNumber: string;
   providerLink: string;
+  includedForms?: ProviderPackageForm[];
 }) {
   const documentLabel = adminDocumentLabel(input.documentType);
+  const includedLabels = (input.includedForms || []).map((form) => form === "provider-contact-sheet" ? "Provider Contact Sheet" : "Occu-Med Contact Sheet");
+  const packageContents = [documentLabel, ...includedLabels];
+  const requestLabel = includedLabels.length ? "document package" : documentLabel.toLowerCase();
   const greeting = input.providerContactName?.trim()
     ? `Hello ${input.providerContactName.trim()},`
     : `Hello ${input.providerName.trim()} team,`;
@@ -29,16 +33,19 @@ export function createInvitationEmailDraft(input: {
     fromEmail: input.fromEmail,
     to: input.to || "",
     cc: "",
-    subject: `Occu-Med ${documentLabel.toLowerCase()} for ${input.providerName}`,
+    subject: `Occu-Med ${requestLabel} for ${input.providerName}`,
     body: `${greeting}
 
-My name is ${input.fromName}, and I am contacting you on behalf of Occu-Med regarding a ${documentLabel.toLowerCase()} prepared for ${input.providerName}.
+My name is ${input.fromName}, and I am contacting you on behalf of Occu-Med regarding a ${requestLabel} prepared for ${input.providerName}.
 
-Please use the link below to review document ${input.documentNumber}. You can confirm the requested services and fees, make any necessary changes, and return the completed document to Occu-Med.
+This package includes:
+${packageContents.map((label) => `• ${label}`).join("\n")}
+
+Please use the link below to review package ${input.documentNumber}. You can confirm the requested services and fees, complete the selected contact information, make any necessary changes, and return the completed package to Occu-Med.
 
 ${input.providerLink}
 
-The link is specific to this document and does not provide access to any other Occu-Med forms or records. If you have any questions before completing it, please reply directly to this email.
+The link is specific to this selected package and does not provide access to any other Occu-Med forms or records. If you have any questions before completing it, please reply directly to this email.
 
 Thank you,
 ${input.fromName}

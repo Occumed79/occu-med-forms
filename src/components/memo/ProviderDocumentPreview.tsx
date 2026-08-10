@@ -1,7 +1,14 @@
 import { forwardRef } from "react";
-import logo from "@/assets/occu-med-logo.png";
+import { OccuMedFingerprintSeal } from "@/components/branding/OccuMedFingerprintSeal";
+import { OccuMedLogo } from "@/components/branding/OccuMedLogo";
+import {
+  isContactHourField,
+  isContactRoleField,
+  occuMedContactSheetAttachment,
+  providerContactSheetFields,
+} from "@/lib/contactSheetAttachments";
 import { documentTitle, SERVICE_AGREEMENT_SECTIONS } from "@/lib/providerDocuments";
-import type { ProviderDocumentData, ProviderServiceRow } from "@/types/memo";
+import type { ContactSheetField, ProviderDocumentData, ProviderServiceRow } from "@/types/memo";
 
 interface Props {
   data: ProviderDocumentData;
@@ -29,7 +36,20 @@ function addressLines(data: ProviderDocumentData) {
 
 function splitServices(data: ProviderDocumentData): ProviderServiceRow[][] {
   const rows = data.services.filter((row) => row.component.trim() || row.price.trim());
-  const finalCapacity = data.documentType === "service-agreement" ? 7 : 14;
+  if (data.documentType === "service-agreement") {
+    if (rows.length <= 4) return [rows];
+    const pages: ProviderServiceRow[][] = [rows.slice(0, 6)];
+    let remaining = rows.slice(6);
+    while (remaining.length > 7) {
+      const take = Math.min(18, remaining.length - 7);
+      pages.push(remaining.slice(0, take));
+      remaining = remaining.slice(take);
+    }
+    pages.push(remaining);
+    return pages;
+  }
+
+  const finalCapacity = 14;
   if (rows.length <= finalCapacity) return [rows];
 
   const pages: ProviderServiceRow[][] = [];
@@ -43,10 +63,50 @@ function splitServices(data: ProviderDocumentData): ProviderServiceRow[][] {
   return pages;
 }
 
+function ContactSheetPage({ title, fields, documentNumber }: { title: string; fields: ContactSheetField[]; documentNumber: string }) {
+  const general = fields.filter((field) => !isContactHourField(field.label) && !isContactRoleField(field.label));
+  const hours = fields.filter((field) => isContactHourField(field.label));
+  const contacts = fields.filter((field) => isContactRoleField(field.label));
+  return (
+    <section className="provider-document-page provider-contact-page" data-pdf-page>
+      <header className="provider-document-header">
+        <OccuMedLogo monochrome />
+        <div><div className="provider-document-company">Occu-Med, LTD</div><h2>{title}</h2></div>
+        <div className="provider-document-number"><span>Package</span><strong>{documentNumber || "—"}</strong></div>
+      </header>
+      <div className="contact-sheet-section">
+        <h3>General information</h3>
+        <dl className="contact-sheet-grid">
+          {general.map((field) => <div key={field.label}><dt>{field.label}</dt><dd>{field.value || "—"}</dd></div>)}
+        </dl>
+      </div>
+      <div className="contact-sheet-section">
+        <h3>Hours of operation</h3>
+        <dl className="contact-hours-grid">
+          {hours.map((field) => <div key={field.label}><dt>{field.label}</dt><dd>{field.value || "—"}</dd></div>)}
+        </dl>
+      </div>
+      <div className="contact-sheet-section contact-sheet-contacts">
+        <h3>Points of contact</h3>
+        <dl>
+          {contacts.map((field) => (
+            <div key={field.label}>
+              <dt>{field.label.replace(" - Name | Title | Telephone | Email | Preferred Method", "").replace(" - Name | Title | Telephone | Email", "")}</dt>
+              <dd>{field.value || "—"}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      <footer><span>Occu-Med · Provider Network Management</span><span>{documentNumber || "Draft"}</span></footer>
+    </section>
+  );
+}
+
 export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
   ({ data, invitationStatus }, ref) => {
     const servicePages = splitServices(data);
     const address = addressLines(data);
+    const includedForms = data.includedForms || [];
 
     return (
       <div ref={ref} className="provider-document-preview" aria-label={`${documentTitle(data.documentType)} PDF preview`}>
@@ -56,7 +116,7 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
           return (
             <section className="provider-document-page" data-pdf-page key={`${pageIndex}-${services[0]?.id || "empty"}`}>
               <header className="provider-document-header">
-                <img src={logo} alt="Occu-Med" />
+                <OccuMedLogo monochrome />
                 <div>
                   <div className="provider-document-company">Occu-Med, LTD</div>
                   <h2>{documentTitle(data.documentType)}</h2>
@@ -92,6 +152,17 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
                       : "This agreement records the services, fees, and operating terms accepted by Occu-Med and the provider. Only services authorized by Occu-Med for a specific referral may be performed and invoiced."
                     }
                   </div>
+
+                  {data.documentType === "service-agreement" && (
+                    <div className="provider-document-terms-block">
+                      <div className="provider-document-terms-heading">Agreement terms</div>
+                      <div className="provider-document-terms">
+                        {SERVICE_AGREEMENT_SECTIONS.map((section) => (
+                          <div key={section.title}><strong>{section.title}</strong><p>{section.body}</p></div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -127,21 +198,11 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
                 </div>
               )}
 
-              {finalPage && data.documentType === "service-agreement" && (
-                <div className="provider-document-terms">
-                  {SERVICE_AGREEMENT_SECTIONS.map((section) => (
-                    <div key={section.title}>
-                      <strong>{section.title}</strong>
-                      <p>{section.body}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {finalPage && (
                 <div className="provider-document-signature">
                   <div>
                     <span>For Occu-Med</span>
+                    <OccuMedFingerprintSeal compact />
                     <strong>{data.preparedBy || "Pending"}</strong>
                     <p>{data.preparedByTitle || "Network Management"}</p>
                     <p>{formatDate(data.issuedDate)}</p>
@@ -169,6 +230,16 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
             </section>
           );
         })}
+        {includedForms.map((form) => form === "provider-contact-sheet" ? (
+          <ContactSheetPage key={form} title="Provider Contact Information" fields={providerContactSheetFields(data)} documentNumber={data.documentNumber} />
+        ) : (
+          <ContactSheetPage
+            key={form}
+            title="Occu-Med Contact Information"
+            fields={data.occuMedContactFields?.length ? data.occuMedContactFields : occuMedContactSheetAttachment().fields}
+            documentNumber={data.documentNumber}
+          />
+        ))}
       </div>
     );
   },

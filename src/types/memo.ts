@@ -55,6 +55,13 @@ export interface SignedClinicMemoData extends ClinicMemoData {
 
 export type ProviderDocumentType = "fee-proposal" | "service-agreement";
 
+export type ProviderPackageForm = "occu-med-contact-sheet" | "provider-contact-sheet";
+
+export interface ContactSheetField {
+  label: string;
+  value: string;
+}
+
 export interface ProviderServiceRow extends PriceRow {
   source: "occu-med" | "provider";
 }
@@ -74,6 +81,9 @@ export interface ProviderDocumentData {
   billingTerms: string;
   services: ProviderServiceRow[];
   notes: string;
+  includedForms: ProviderPackageForm[];
+  occuMedContactFields: ContactSheetField[];
+  providerContactFields: ContactSheetField[];
   providerSignerName: string;
   providerSignerTitle: string;
   providerSignatureType: "typed" | "drawn";
