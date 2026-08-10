@@ -1002,7 +1002,9 @@ const server = http.createServer(async (req, res) => {
       requireDatabase();
       await pool.query(
         `update provider_invitations set status = 'expired', updated_at = now(),
-           retention_expires_at = now() + ((select inactive_invitation_days::text || ' days')::interval from retention_settings where id = 1)
+           retention_expires_at = now() + make_interval(days => coalesce(
+             (select inactive_invitation_days from retention_settings where id = 1), 365
+           ))
          where status in ('draft','sent','viewed') and expires_at < now()`,
       );
       const allowedStatuses = new Set(["draft", "sent", "viewed", "returned", "completed", "declined", "expired", "cancelled"]);
@@ -1166,7 +1168,9 @@ const server = http.createServer(async (req, res) => {
       const result = await pool.query(
         `update provider_invitations set status = 'completed', approved_at = $2,
           certificate_bytes = $3, approved_by_user_id = $4,
-          retention_expires_at = now() + ((select completed_document_days::text || ' days')::interval from retention_settings where id = 1),
+          retention_expires_at = now() + make_interval(days => coalesce(
+            (select completed_document_days from retention_settings where id = 1), 2555
+          )),
           updated_at = now()
          where id = $1 and status = 'returned' returning id`,
         [adminApproveMatch[1], approvedAt, Buffer.from(certificateBytes), session.user_id],
@@ -1194,7 +1198,9 @@ const server = http.createServer(async (req, res) => {
       requireDatabase();
       const result = await pool.query(
         `update provider_invitations set status = 'cancelled', cancelled_by_user_id = $2,
-           retention_expires_at = now() + ((select inactive_invitation_days::text || ' days')::interval from retention_settings where id = 1),
+           retention_expires_at = now() + make_interval(days => coalesce(
+             (select inactive_invitation_days from retention_settings where id = 1), 365
+           )),
            updated_at = now() where id = $1 and status not in ('completed','declined','cancelled') returning id`,
         [adminCancelMatch[1], session.user_id],
       );
@@ -1318,7 +1324,9 @@ const server = http.createServer(async (req, res) => {
       if (expired) {
         await pool.query(
           `update provider_invitations set status = 'expired',
-             retention_expires_at = now() + ((select inactive_invitation_days::text || ' days')::interval from retention_settings where id = 1),
+             retention_expires_at = now() + make_interval(days => coalesce(
+               (select inactive_invitation_days from retention_settings where id = 1), 365
+             )),
              updated_at = now() where token_hash = $1`,
           [hash],
         );
@@ -1392,7 +1400,9 @@ const server = http.createServer(async (req, res) => {
       if (new Date(rows[0].expires_at).getTime() < Date.now()) return sendJson(res, 410, { error: "Invitation expired." });
       const result = await pool.query(
         `update provider_invitations set status = 'declined', declined_at = now(), decline_reason = $2,
-          retention_expires_at = now() + ((select inactive_invitation_days::text || ' days')::interval from retention_settings where id = 1),
+          retention_expires_at = now() + make_interval(days => coalesce(
+            (select inactive_invitation_days from retention_settings where id = 1), 365
+          )),
           updated_at = now() where token_hash = $1 and status in ('draft','sent','viewed') returning id, declined_at`,
         [hash, reason || null],
       );
