@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Download, Link2, Mail, Trash2 } from "lucide-react";
+import { Download, FileCheck2, Link2, Mail, Trash2 } from "lucide-react";
 import { InvitationDeliveryPanel } from "@/components/admin/InvitationDeliveryPanel";
 import { useAdminUser } from "@/components/admin/adminAuth";
 import { AddressBlock } from "./AddressBlock";
@@ -55,6 +55,11 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
 
   const removeService = (id: string) =>
     set("services", data.services.filter((row) => row.id !== id));
+
+  const toggleAttachment = (attachment: ProviderDocumentData["attachments"][number]) =>
+    set("attachments", data.attachments.includes(attachment)
+      ? data.attachments.filter((item) => item !== attachment)
+      : [...data.attachments, attachment]);
 
   const makePdf = async () => {
     if (!previewRef.current) throw new Error("The document preview is not ready.");
@@ -184,6 +189,23 @@ export const ProviderDocumentForm = ({ documentType }: Props) => {
 
           <Field label="Notes or Special Conditions">
             <Textarea value={data.notes} onChange={(event) => set("notes", event.target.value)} placeholder="Scope details, conditions, exclusions, or other instructions…" />
+          </Field>
+
+          <hr className="section-divider" />
+          <Field label="Include forms in this document package">
+            <p className="field-label-hint">Select any combination. Every selected form is appended to the exact preview and downloaded PDF.</p>
+            <div className="document-package-options">
+              {([
+                ["occu-contact-sheet", "Occu-Med Contact Sheet", "Current Occu-Med departments, hours, and contact details"],
+                ["provider-contact-sheet", "Provider Contact Sheet", "Provider location, hours, and points of contact"],
+              ] as const).map(([value, label, description]) => (
+                <label key={value} className={data.attachments.includes(value) ? "selected" : ""}>
+                  <input type="checkbox" checked={data.attachments.includes(value)} onChange={() => toggleAttachment(value)} />
+                  <FileCheck2 size={20} />
+                  <span><strong>{label}</strong><small>{description}</small></span>
+                </label>
+              ))}
+            </div>
           </Field>
 
           <hr className="section-divider" />

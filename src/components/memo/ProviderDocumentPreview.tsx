@@ -1,6 +1,8 @@
 import { forwardRef } from "react";
 import logo from "@/assets/occu-med-logo.png";
 import { documentTitle, SERVICE_AGREEMENT_SECTIONS } from "@/lib/providerDocuments";
+import { occuMedContactSheetAttachment, providerContactSheetAttachment } from "@/lib/contactSheetAttachments";
+import { OccuMedSignature } from "@/components/signatures/OccuMedSignature";
 import type { ProviderDocumentData, ProviderServiceRow } from "@/types/memo";
 
 interface Props {
@@ -47,6 +49,9 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
   ({ data, invitationStatus }, ref) => {
     const servicePages = splitServices(data);
     const address = addressLines(data);
+    const attachmentPages = (data.attachments || []).map((attachment) => attachment === "occu-contact-sheet"
+      ? occuMedContactSheetAttachment()
+      : providerContactSheetAttachment());
 
     return (
       <div ref={ref} className="provider-document-preview" aria-label={`${documentTitle(data.documentType)} PDF preview`}>
@@ -92,6 +97,14 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
                       : "This agreement records the services, fees, and operating terms accepted by Occu-Med and the provider. Only services authorized by Occu-Med for a specific referral may be performed and invoiced."
                     }
                   </div>
+
+                  {data.documentType === "service-agreement" && (
+                    <div className="provider-document-terms provider-document-terms-top">
+                      {SERVICE_AGREEMENT_SECTIONS.map((section, index) => (
+                        <div key={section.title}><span>{index + 1}</span><strong>{section.title}</strong><p>{section.body}</p></div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
 
@@ -127,22 +140,12 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
                 </div>
               )}
 
-              {finalPage && data.documentType === "service-agreement" && (
-                <div className="provider-document-terms">
-                  {SERVICE_AGREEMENT_SECTIONS.map((section) => (
-                    <div key={section.title}>
-                      <strong>{section.title}</strong>
-                      <p>{section.body}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {finalPage && (
                 <div className="provider-document-signature">
                   <div>
                     <span>For Occu-Med</span>
-                    <strong>{data.preparedBy || "Pending"}</strong>
+                    <OccuMedSignature compact />
+                    <strong>{data.preparedBy || "Occu-Med authorized representative"}</strong>
                     <p>{data.preparedByTitle || "Network Management"}</p>
                     <p>{formatDate(data.issuedDate)}</p>
                   </div>
@@ -169,6 +172,20 @@ export const ProviderDocumentPreview = forwardRef<HTMLDivElement, Props>(
             </section>
           );
         })}
+        {attachmentPages.map((attachment) => (
+          <section className="provider-document-page provider-contact-attachment" data-pdf-page key={attachment.title}>
+            <header className="provider-document-header">
+              <img src={logo} alt="Occu-Med" />
+              <div><div className="provider-document-company">Occu-Med, LTD</div><h2>{attachment.title}</h2></div>
+              <div className="provider-document-number"><span>Included form</span><strong>{data.documentNumber}</strong></div>
+            </header>
+            <div className="attachment-intro">This contact sheet is included with the {documentTitle(data.documentType)} package.</div>
+            <div className="attachment-fields">
+              {attachment.fields.map((field) => <div key={field.label}><span>{field.label}</span><strong>{field.value || "________________________________________________________________"}</strong></div>)}
+            </div>
+            <footer><span>Occu-Med · Provider Network Management</span><span>{attachment.title}</span></footer>
+          </section>
+        ))}
       </div>
     );
   },

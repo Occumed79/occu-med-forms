@@ -64,6 +64,7 @@ export function createProviderDocumentData(documentType: ProviderDocumentType): 
     providerSignedDate: "",
     agreedElectronic: false,
     electronicConsentText: ELECTRONIC_RECORD_CONSENT_TEXT,
+    attachments: [],
   };
 }
 
